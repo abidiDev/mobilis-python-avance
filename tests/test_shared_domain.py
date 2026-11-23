@@ -2,7 +2,7 @@
 
 from collections.abc import Iterator
 from dataclasses import FrozenInstanceError
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from decimal import Decimal
 
 import pytest
@@ -71,7 +71,7 @@ def test_trajet_may_have_missing_return_without_implying_a_charge() -> None:
         velo_id="V00829",
         type_velo=TypeVelo.ELECTRIQUE,
         station_depart="MB-0080",
-        debut=datetime(2026, 8, 1, 0, 13, tzinfo=timezone.utc),
+        debut=datetime(2026, 8, 1, 0, 13, tzinfo=UTC),
         station_arrivee=None,
         fin=None,
         distance_m=None,
@@ -151,7 +151,7 @@ def test_reader_protocol_is_structurally_satisfied() -> None:
                 "V00616",
                 TypeVelo.MECANIQUE,
                 "MB-0015",
-                datetime(2026, 8, 1, tzinfo=timezone.utc),
+                datetime(2026, 8, 1, tzinfo=UTC),
                 None,
                 None,
                 None,

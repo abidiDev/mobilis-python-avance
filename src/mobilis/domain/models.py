@@ -5,11 +5,11 @@ les valeurs brutes invalides avant de construire ces objets.
 La validation métier détaillée appartient aux tickets des modules concernés.
 """
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import Decimal
 from enum import StrEnum
-from typing import Mapping
 
 
 class StatutStation(StrEnum):
