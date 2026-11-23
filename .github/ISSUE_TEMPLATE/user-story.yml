@@ -1,0 +1,33 @@
+name: User Story
+description: Fonctionnalité métier Mobilis avec critères vérifiables
+title: "[US] "
+labels: ["user-story"]
+body:
+  - type: textarea
+    id: story
+    attributes:
+      label: User Story
+      description: "En tant que [rôle], je veux [fonction], afin de [valeur]."
+      placeholder: "En tant qu'analyste Mobilis, je veux..."
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Critères d'acceptation
+      description: "Fermer cette US seulement lorsque toutes ses tâches et tous ses critères sont validés."
+      value: |
+        - [ ] Résultat reproductible à partir des données du kit
+        - [ ] Cas limites et erreurs pris en charge
+        - [ ] Tests automatisés pertinents
+        - [ ] Typage et lint valides
+        - [ ] README / documentation mis à jour
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dépendances et interfaces
+      description: Issues bloquantes, modules touchés, contrats d'entrée/sortie.
+    validations:
+      required: false

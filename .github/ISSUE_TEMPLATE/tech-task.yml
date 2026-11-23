@@ -1,0 +1,45 @@
+name: Tâche technique
+description: Travail technique découpé et testable
+title: "[TECH] "
+labels: ["tech-task"]
+body:
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objectif
+      placeholder: "Configurer la CI pour exécuter lint, mypy strict et pytest."
+    validations:
+      required: true
+  - type: textarea
+    id: ownership
+    attributes:
+      label: User Story, responsable et revue
+      description: "Utiliser les vrais numéros GitHub. Affecter la tâche à un seul membre ; l’autre relit la PR."
+      placeholder: |
+        US parente : #N ou sans objet
+        Responsable : @compte
+        Relecteur : @binome
+        Dépendances : #N ou aucune
+    validations:
+      required: true
+  - type: textarea
+    id: changes
+    attributes:
+      label: Travail à réaliser
+      value: |
+        - [ ] Implémentation
+        - [ ] Tests / vérification
+        - [ ] Documentation si nécessaire
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: Définition de terminé
+      value: |
+        - [ ] Pull Request liée à cette issue
+        - [ ] CI verte
+        - [ ] Revue par l'autre membre
+        - [ ] Fusion dans main
+    validations:
+      required: true

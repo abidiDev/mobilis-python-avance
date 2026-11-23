@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+*.egg-info/
+build/
+dist/
+
+# Editeurs / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Donnees brutes Mobilis : ne pas versionner
+/donnees/
+/data/raw/
+/mobilis-kit.zip
+
+# Archives et kit conserves a cote du depot
+/mobilis-github-starter.zip
+/mobilis-kit/
+.env
+.env.*
+!.env.example
