@@ -53,7 +53,9 @@ le premier résultat réel de GitHub Actions après publication.
 - Test officiel de démarrage : 1 test réussi.
 - Compatibilité des dépendances installées : vérifiée avec `pip check`.
 - Git initialisé sur `main` ; dépôt public : [abidiDev/mobilis-python-avance](https://github.com/abidiDev/mobilis-python-avance).
-- Suivre les Issues et les exécutions de CI sur GitHub ; voir le guide de configuration pour le Project.
+- [Premier passage GitHub Actions réussi](https://github.com/abidiDev/mobilis-python-avance/actions/runs/45147536773) sur le commit `71ca3d7`.
+- [21 tickets créés](https://github.com/abidiDev/mobilis-python-avance/issues), avec critères, dépendances et répartition A/B.
+- Project, protection de `main` et invitation du binôme : à finaliser.
 
 ## Fichiers et données
 
@@ -87,10 +89,9 @@ Les règles R1–R12 et les exemples E1–E6 sont dans
 - [Création du dépôt et configuration du Project](GITHUB_PROJECT_SETUP.md)
 - [Journal des décisions](docs/decisions.md)
 
-Une tâche de développement a un responsable et l'autre membre pour relecteur.
+@abidiDev réalise Stations, API et Livraison ; le binôme réalise Trajets et Facturation. Chacun prend toutes les tâches de ses US, tests et documentation inclus. Accord initial commun sur les interfaces (#8), puis revue des PR par l’autre membre.
 Créer une branche courte à partir de `main`, ouvrir une PR liée à la tâche,
 attendre la CI verte et la revue, puis fusionner et supprimer la branche.
-Les tickets et le tableau devront être créés sur GitHub ; les fichiers Markdown
-ne les créent pas automatiquement.
+Les [5 User Stories et 16 tâches](https://github.com/abidiDev/mobilis-python-avance/issues) sont créées et reliées. Le tableau Projects et la protection de `main` restent à configurer selon le guide.
 
 Sujet de référence : [Projet final Mobilis](https://dafniskra.github.io/portail_cours_M1/cours/PYTHON_AVANCE/projet.html).
