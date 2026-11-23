@@ -119,9 +119,7 @@ def test_tariff_values_remain_decimal() -> None:
             ),
         ),
     )
-    assert config.grilles[0].formules[FormuleAbonnement.ANNUEL].prix_tranche == Decimal(
-        "1.20"
-    )
+    assert config.grilles[0].formules[FormuleAbonnement.ANNUEL].prix_tranche == Decimal("1.20")
 
 
 def test_collector_emits_uniform_anomalies_without_global_state() -> None:
