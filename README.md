@@ -61,8 +61,6 @@ le premier résultat réel de GitHub Actions après publication.
 
 ```text
 projet pyton/
-├── mobilis-kit.zip
-├── mobilis-github-starter.zip
 ├── mobilis-kit/                  kit officiel conservé à part
 │   ├── donnees/
 │   ├── outils/serveur_bornes.py
@@ -91,7 +89,7 @@ Les règles R1–R12 et les exemples E1–E6 sont dans
 - [Création du dépôt et configuration du Project](GITHUB_PROJECT_SETUP.md)
 - [Journal des décisions](docs/decisions.md)
 
-Une tâche de développement a un responsable et l'autre membre pour relecteur.
+@abidiDev réalise Stations, API et Livraison ; le binôme réalise Trajets et Facturation. Chacun prend toutes les tâches de ses US, tests et documentation inclus. Accord initial commun sur les interfaces (#8), puis revue des PR par l’autre membre.
 Créer une branche courte à partir de `main`, ouvrir une PR liée à la tâche,
 attendre la CI verte et la revue, puis fusionner et supprimer la branche.
 Les [5 User Stories et 16 tâches](https://github.com/abidiDev/mobilis-python-avance/issues) sont créées et reliées. Le tableau Projects et la protection de `main` restent à configurer selon le guide.

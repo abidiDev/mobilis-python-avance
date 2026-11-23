@@ -1,10 +1,19 @@
 # Collaboration — Mobilis (binôme)
 
+## Responsabilité par User Story
+
+| Responsable | User Stories | Tâches |
+|---|---|---|
+| A — @abidiDev | Stations #1, API / État temps réel #4, Livraison #5 | #6, #7, #9, #10, #11, #17, #18, #19, #20, #21 |
+| B — binôme, compte à ajouter | Trajets #2, Facturation #3 | #12, #13, #14, #15, #16 |
+
+Chacun réalise toutes les tâches de ses US : code, tests et documentation. L’autre membre relit les PR. La tâche préalable #8 est un accord commun sur les interfaces, consigné par A. A coordonne la livraison ; chacun rédige son bilan individuel et participe à la démonstration. Les tickets B attendent le compte du binôme pour leur assignation GitHub.
+
 ## Stratégie GitHub Flow
 - `main` est la seule branche permanente et doit rester stable.
 - Une tâche de développement = une branche courte = une pull request. Une User Story peut regrouper plusieurs tâches et PR.
 - Préfixes : `feature/`, `fix/`, `test/`, `docs/`, `chore/`.
-- Exemple : `feature/12-station-model` (12 est le vrai numéro GitHub de l'issue).
+- Exemple : `feature/9-station-model` (9 est le vrai numéro GitHub de l'issue).
 - Après le commit initial du squelette et de la configuration, pas de commit direct sur `main` : PR obligatoire, approuvée par l’autre membre et CI verte.
 - Fusion recommandée : **Squash and merge**, puis suppression de la branche.
 
@@ -12,13 +21,13 @@
 ```powershell
 git switch main
 git pull --ff-only origin main
-git switch -c feature/12-station-model
+git switch -c feature/9-station-model
 # développer, tester, committer
 git add .
 git commit -m "feat(stations): implement immutable station model"
-git push -u origin feature/12-station-model
+git push -u origin feature/9-station-model
 ```
-Ouvrir une PR vers `main`, inclure `Closes #12` pour la tâche (adapter au vrai numéro GitHub) et demander une revue au binôme. Utiliser `Refs #N` pour l’US parente. Ne fermer l’US que lorsque toutes ses tâches et ses critères sont validés.
+Ouvrir une PR vers `main`, inclure `Closes #9` pour la tâche (adapter au vrai numéro GitHub) et demander une revue au binôme. Utiliser `Refs #N` pour l’US parente. Ne fermer l’US que lorsque toutes ses tâches et ses critères sont validés.
 
 ## Avant chaque PR
 Depuis la racine du dépôt, utiliser ces commandes PowerShell avec l’environnement Python 3.11 déjà créé. Le contrôle GitHub Actions correspondant s’appelle `lint-type-test`.
@@ -39,7 +48,7 @@ Depuis la racine du dépôt, utiliser ces commandes PowerShell avec l’environn
 ## Rituel binôme
 - Point de 10 minutes en début de séance : progrès, blocages, priorité.
 - Une revue croisée sur chaque PR.
-- Référent qualité tournant à chaque sprint, sans transférer toute la qualité à une seule personne.
+- Chacun assure les tests et la qualité de ses US ; l’autre vérifie les PR.
 - Décisions importantes consignées dans `docs/decisions.md`.
 
 ## Données brutes

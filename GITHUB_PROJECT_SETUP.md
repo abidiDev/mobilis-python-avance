@@ -1,75 +1,69 @@
 # Configuration GitHub Projects — Mobilis
 
-Les Issues sont créées : US #1–#5 et tâches #6–#21. La correspondance exacte figure dans BACKLOG.md. Le Project et la protection de main restent à configurer.
+Les 5 User Stories (#1–#5) et les 16 tâches (#6–#21) existent. Ne pas créer de doublons. Le tableau Project et la protection de main restent à configurer.
 
-## Initialisation
-1. Créer un dépôt **public** `abidiDev/mobilis-python-avance`. Le propriétaire ajoutera lui-même son binôme plus tard. Ne pas ajouter de README, de licence ou de .gitignore lors de la création : le dépôt local possède déjà ses fichiers.
-2. Créer un **GitHub Project** de type Board : `Mobilis — Team Board`.
-3. Lier le dépôt au Project et activer l'ajout automatique des issues pertinentes si possible.
-4. Créer les statuts : **Backlog**, **Ready**, **In progress**, **In review**, **Done**.
-5. Ajouter les champs : `Priority` (P0/P1/P2), `Size` (1/2/3/5), `Iteration` (sprint), `Module` (Setup/Stations/Trajets/Facturation/API/Livraison).
-6. Créer les vues `Board` (par Status), `Sprint` (filtrée par Iteration), `Par membre` (groupée par Assignee), `Roadmap` si dates connues.
-7. Avant d’utiliser les formulaires qui appliquent `user-story` et `tech-task`, créer les labels d'issues : `user-story`, `tech-task`, `bug`, `documentation`, `quality`, `blocked` ; éventuellement `module:*`.
-8. Créer les 5 US de `BACKLOG.md` comme **Issues**, puis les tâches techniques. Utiliser les **sub-issues** quand disponibles, sinon relier les tickets par leurs descriptions.
-9. Activer le passage des Issues fermées vers Done. Une PR ferme sa tâche avec `Closes #N` et référence l’US avec `Refs #N` ; fermer l’US seulement après validation de toutes ses tâches et de ses critères.
-10. Après une première CI réussie sous Python 3.11, configurer la protection de `main` : PR obligatoire, revue par un pair, check `lint-type-test` requis (si le plan GitHub du dépôt permet ces règles).
+## Répartition par US
 
-## Politique d'équipe
-- Aucun développement avant accord sur le contrat (types, signatures, formats de données).
-- Une tâche = un responsable + un relecteur (l’autre personne). Une tâche de développement = une branche courte = une PR. Une US peut regrouper plusieurs tâches. Utiliser Squash and merge, puis supprimer la branche.
-- Une seule tâche principale en cours par membre ; petites branches ; PR de taille raisonnable.
-- Ne pas lancer le sprint suivant si le cas précédent n'a pas de résultat démontrable.
-- Pas de modification manuelle des données brutes.
+- @abidiDev (A) : Stations #1, API / État temps réel #4, Livraison #5, avec toutes leurs tâches.
+- Binôme (B) : Trajets #2 et Facturation #3, avec toutes leurs tâches.
+- #8 : accord initial commun sur les types, formats et signatures, consigné par A.
+- Chaque responsable réalise code, tests et documentation ; l’autre relit les PR.
+- A coordonne la livraison ; chaque membre prépare son bilan individuel et participe à la démonstration.
+- Les tickets B restent sans assignation GitHub jusqu’à l’invitation du binôme. Le propriétaire lui donnera accès au dépôt et au Project.
 
-## Attention aux permissions du dépôt
-GitHub peut limiter l'application de protections de branches pour les dépôts privés sur certains plans. Dans ce cas, garder exactement les mêmes règles **par convention d'équipe** et vérifier les checks des PR avant merge.
-
-## Dépôt commun et nouvelle machine
-
-Dépôt public : https://github.com/abidiDev/mobilis-python-avance
-
-Sur une nouvelle machine, cloner le dépôt puis suivre le README pour créer un
-environnement Python 3.11 local. Chaque membre récupère séparément les données
-du kit officiel. Les archives et `.venv` restent en dehors de Git.
-
-```powershell
-git clone https://github.com/abidiDev/mobilis-python-avance.git
-cd mobilis-python-avance
-py -3.11 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -e '.[dev]'
-```
-
-Dans **Actions**, le contrôle attendu est `lint-type-test` du workflow **Python CI**.
-La protection de `main` doit être activée après son premier passage réussi.
-Le propriétaire ajoutera son binôme au dépôt et au Project ultérieurement.
-
-Références :
-- [GitHub Flow](https://docs.github.com/en/get-started/using-github/github-flow)
-- [Créer et configurer un Project](https://docs.github.com/en/issues/planning-and-tracking-with-projects/learning-about-projects/quickstart-for-projects)
-- [CI Python](https://docs.github.com/en/actions/tutorials/build-and-test-code/python)
-
-## Réglages restant à effectuer
-
-### Tableau
+## Créer le tableau
 
 1. Ouvrir [Projects du dépôt](https://github.com/abidiDev/mobilis-python-avance/projects), puis **New project**.
-2. Choisir **Board**, nommer le tableau **Mobilis — Team Board** et importer les Issues du dépôt si l’option est proposée.
-3. Créer les statuts **Backlog**, **Ready**, **In progress**, **In review**, **Done**. Ajouter les 21 Issues existantes, sans en créer de doublons. Les liens des tâches sont dans chaque US.
-4. Afficher **Assignees** et **Labels**. Ajouter **Priority** (P0/P1/P2), **Size** (1/2/3/5), **Iteration** et **Module**. Les valeurs de sprint, module et taille sont déjà renseignées dans les tickets ; fixer les dates d’itération une fois le calendrier convenu.
-5. Ajouter les vues **Board**, **Sprint** et **Par membre**. Activer le passage des Issues fermées vers Done. Utiliser Ready seulement pour les tâches dont les dépendances sont satisfaites.
-6. Les tâches A sont affectées à @abidiDev. Les tâches B attendent le compte du binôme ; celui-ci doit aussi recevoir l’accès au Project.
+2. Choisir une vue **Board** et nommer le tableau **Mobilis — Team Board**. Lier le dépôt au Project si nécessaire.
+3. Ajouter les 21 Issues existantes du dépôt (option d’ajout depuis un dépôt). Les tâches sont reliées aux US dans leurs descriptions ; la hiérarchie native de sub-issues n’est pas encore configurée.
+4. Utiliser **Status** comme champ des colonnes, avec **Backlog**, **Ready**, **In progress**, **In review**, **Done**.
+5. Afficher **Assignees** et **Labels** sur les cartes.
+6. Créer une vue **US** filtrée avec `label:user-story` et une vue **Tâches** filtrée avec `label:tech-task`. Ce sont deux vues du même Project.
+7. Facultativement, ajouter Priority, Size, Module et Iteration. Les valeurs présentes dans les descriptions ne remplissent pas automatiquement les champs du Project. Les anciens numéros de sprint sont des repères de lots ; convenir des dates réelles à deux.
+8. Activer le workflow qui passe les issues fermées à Done. Vérifier son fonctionnement sur #6, déjà terminée.
 
-### Protection de main
+## Déplacer une carte au quotidien
 
-Dans **Settings > Branches**, créer une règle de protection classique pour `main` (ou les règles équivalentes dans un ruleset actif) :
+Dans la vue **Tâches**, maintenir le clic sur une carte, la faire glisser vers la colonne souhaitée, puis relâcher. Le déplacement change son champ **Status**. On peut aussi modifier ce champ directement dans le Project.
+
+| Colonne | Quand l’utiliser |
+|---|---|
+| Backlog | Travail prévu, encore à préparer |
+| Ready | Objectif clair et interfaces nécessaires convenues |
+| In progress | Son responsable commence à travailler dessus |
+| In review | PR prête pour la relecture de l’autre membre |
+| Done | Critères validés, CI verte, PR relue et fusionnée |
+
+Exemple : A démarre #9 (modèle Station) : déplacer #9 de Ready vers In progress. Lors de l’ouverture de sa PR prête à relire, passer #9 à In review. Après revue et fusion, fermer la tâche avec `Closes #9` dans la PR ; vérifier son passage à Done.
+
+Dans la vue **US**, passer Stations #1 à In progress dès que sa première tâche démarre. Laisser #1 en cours pendant que #9, #10 et #11 avancent séparément. Fermer #1 et la passer à Done seulement lorsque ses trois tâches et tous ses critères d’acceptation sont validés.
+
+**Assignees** indique qui réalise le travail. **Status** indique son avancement. Déplacer une US ne déplace pas automatiquement ses tâches et ne change pas leurs responsables. Dans notre organisation, mettre une carte à Done ne suffit pas à valider son travail ; la fermeture de l’issue et les critères doivent également être vérifiés.
+
+## Travail en parallèle et branches
+
+Valider les contrats de #8, puis A avance sur Stations et API tandis que B avance sur Trajets et Facturation. Des jeux de test et des réponses simulées permettent de développer avant l’intégration finale. La livraison des quatre commandes exige les résultats des deux membres.
+
+Une tâche de développement = une branche courte = une PR vers main. Une US peut donc contenir plusieurs PR, toutes réalisées par son responsable. La PR ferme sa tâche avec `Closes #N` et référence l’US avec `Refs #N`. Suivre [CONTRIBUTING.md](CONTRIBUTING.md), garder une tâche principale en cours par membre et faire une revue croisée.
+
+## Protection de main
+
+Dans **Settings > Branches**, créer une règle pour main, ou configurer les règles équivalentes dans un ruleset actif :
 
 - Exiger une Pull Request et **1 approbation**.
-- Exiger la réussite du contrôle **lint-type-test** et la résolution des discussions.
+- Exiger le contrôle **lint-type-test** et la résolution des discussions.
 - Interdire les force-push et la suppression de main.
-- Dans **Settings > General**, conserver **Squash merging** et activer la suppression automatique des branches fusionnées.
+- Conserver **Squash merging** et activer la suppression automatique des branches fusionnées.
 
-Le binôme doit être invité pour fournir l’approbation ; l’auteur ne peut pas approuver sa propre PR. La CI verte et les conventions écrites ne remplacent pas l’activation de ces réglages.
+Le contrôle GitHub Actions a déjà réussi. Les règles ci-dessus restent à activer. L’auteur ne peut pas approuver sa propre PR : le binôme devra être invité pour fournir sa revue.
 
-### Connexion Git sur le PC
+## Nouvelle machine et connexion Git
 
-La publication initiale a utilisé la connexion GitHub de l’application. Le `git push` local a signalé une authentification invalide. Avant la prochaine publication depuis VS Code, reconnecter le compte GitHub avec le gestionnaire d’identifiants Git ; ne pas placer de mot de passe ou de jeton dans les fichiers du projet.
+Cloner [le dépôt public](https://github.com/abidiDev/mobilis-python-avance), puis suivre le [README](README.md) pour créer l’environnement Python 3.11. Chaque membre récupère séparément le kit officiel ; les données brutes et l’environnement local ne sont pas versionnés.
+
+La publication initiale a utilisé la connexion GitHub de l’application. Le git push local avait signalé une authentification invalide : reconnecter le compte GitHub avec le gestionnaire d’identifiants Git avant la prochaine publication depuis VS Code. Ne pas enregistrer de jeton dans le dépôt.
+
+Références :
+- [Déplacer les cartes et configurer un Board](https://docs.github.com/en/issues/planning-and-tracking-with-projects/customizing-views-in-your-project/customizing-the-board-layout)
+- [Démarrer un Project](https://docs.github.com/en/issues/planning-and-tracking-with-projects/learning-about-projects/quickstart-for-projects)
+- [GitHub Flow](https://docs.github.com/en/get-started/using-github/github-flow)
