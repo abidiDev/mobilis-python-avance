@@ -1,6 +1,6 @@
 # Configuration GitHub Projects — Mobilis
 
-Le Project et les Issues restent à créer sur GitHub. Les IDs du backlog ne sont pas des numéros GitHub.
+Les Issues sont créées : US #1–#5 et tâches #6–#21. La correspondance exacte figure dans BACKLOG.md. Le Project et la protection de main restent à configurer.
 
 ## Initialisation
 1. Créer un dépôt **public** `abidiDev/mobilis-python-avance`. Le propriétaire ajoutera lui-même son binôme plus tard. Ne pas ajouter de README, de licence ou de .gitignore lors de la création : le dépôt local possède déjà ses fichiers.
@@ -47,3 +47,29 @@ Références :
 - [GitHub Flow](https://docs.github.com/en/get-started/using-github/github-flow)
 - [Créer et configurer un Project](https://docs.github.com/en/issues/planning-and-tracking-with-projects/learning-about-projects/quickstart-for-projects)
 - [CI Python](https://docs.github.com/en/actions/tutorials/build-and-test-code/python)
+
+## Réglages restant à effectuer
+
+### Tableau
+
+1. Ouvrir [Projects du dépôt](https://github.com/abidiDev/mobilis-python-avance/projects), puis **New project**.
+2. Choisir **Board**, nommer le tableau **Mobilis — Team Board** et importer les Issues du dépôt si l’option est proposée.
+3. Créer les statuts **Backlog**, **Ready**, **In progress**, **In review**, **Done**. Ajouter les 21 Issues existantes, sans en créer de doublons. Les liens des tâches sont dans chaque US.
+4. Afficher **Assignees** et **Labels**. Ajouter **Priority** (P0/P1/P2), **Size** (1/2/3/5), **Iteration** et **Module**. Les valeurs de sprint, module et taille sont déjà renseignées dans les tickets ; fixer les dates d’itération une fois le calendrier convenu.
+5. Ajouter les vues **Board**, **Sprint** et **Par membre**. Activer le passage des Issues fermées vers Done. Utiliser Ready seulement pour les tâches dont les dépendances sont satisfaites.
+6. Les tâches A sont affectées à @abidiDev. Les tâches B attendent le compte du binôme ; celui-ci doit aussi recevoir l’accès au Project.
+
+### Protection de main
+
+Dans **Settings > Branches**, créer une règle de protection classique pour `main` (ou les règles équivalentes dans un ruleset actif) :
+
+- Exiger une Pull Request et **1 approbation**.
+- Exiger la réussite du contrôle **lint-type-test** et la résolution des discussions.
+- Interdire les force-push et la suppression de main.
+- Dans **Settings > General**, conserver **Squash merging** et activer la suppression automatique des branches fusionnées.
+
+Le binôme doit être invité pour fournir l’approbation ; l’auteur ne peut pas approuver sa propre PR. La CI verte et les conventions écrites ne remplacent pas l’activation de ces réglages.
+
+### Connexion Git sur le PC
+
+La publication initiale a utilisé la connexion GitHub de l’application. Le `git push` local a signalé une authentification invalide. Avant la prochaine publication depuis VS Code, reconnecter le compte GitHub avec le gestionnaire d’identifiants Git ; ne pas placer de mot de passe ou de jeton dans les fichiers du projet.

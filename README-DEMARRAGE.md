@@ -2,7 +2,7 @@
 
 Ce pack contient **seulement les fichiers de gestion de projet et de CI**. Il ne remplace pas le squelette `demarrage/` du kit officiel.
 
-Le squelette et ce starter sont maintenant assemblés localement. Pour ce PC, suivre d’abord le [README Windows](README.md). Les tickets et le Project restent à créer sur GitHub.
+Le squelette et ce starter sont maintenant assemblés localement. Pour ce PC, suivre d’abord le [README Windows](README.md). Les 21 tickets sont créés ; le Project et la protection de main restent à configurer.
 
 ## Mode d'emploi
 1. Télécharger et décompresser le kit Mobilis officiel.

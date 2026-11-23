@@ -1,6 +1,6 @@
 # Mobilis — Product Backlog (proposition initiale)
 
-Les Issues et le Project ne sont pas encore créés sur GitHub. Les critères pédagogiques hérités du starter sont à recouper avec le sujet officiel avant chaque cas. A et B désignent les deux membres, à remplacer par leurs pseudos GitHub.
+Les 5 User Stories et les 16 tâches sont créées sur GitHub. Le tableau Project reste à configurer. Les critères pédagogiques hérités du starter sont à recouper avec le sujet officiel avant chaque cas. A et B désignent les deux membres, à remplacer par leurs pseudos GitHub.
 
 Les IDs `US-XX` et `T-XX` ci-dessous sont des repères internes. Après création, utiliser les vrais numéros GitHub Issues pour les branches et les références `Closes #N`.
 
@@ -65,3 +65,31 @@ Les fichiers locaux ne prouvent pas que T-01 et T-02 sont terminées : vérifier
 - **Sprint 5** : cas 5 Livraison, documentation et soutenance.
 
 La durée des sprints doit être définie d'après la date limite réelle de rendu.
+
+## Correspondance avec les tickets GitHub
+
+| Repère | Issue | Sujet |
+|---|---|---|
+| US-01 | [#1](https://github.com/abidiDev/mobilis-python-avance/issues/1) | Stations |
+| US-02 | [#2](https://github.com/abidiDev/mobilis-python-avance/issues/2) | Trajets |
+| US-03 | [#3](https://github.com/abidiDev/mobilis-python-avance/issues/3) | Facturation |
+| US-04 | [#4](https://github.com/abidiDev/mobilis-python-avance/issues/4) | État temps réel |
+| US-05 | [#5](https://github.com/abidiDev/mobilis-python-avance/issues/5) | Livraison |
+| T-01 | [#6](https://github.com/abidiDev/mobilis-python-avance/issues/6) | Créer dépôt, importer squelette `demarrage/`, `.gitignore`, pyproject |
+| T-02 | [#7](https://github.com/abidiDev/mobilis-python-avance/issues/7) | Configurer CI, templates Issues/PR, Project GitHub |
+| T-03 | [#8](https://github.com/abidiDev/mobilis-python-avance/issues/8) | Explorer kit, définir types et contrats, ouvrir journal anomalies |
+| T-04 | [#9](https://github.com/abidiDev/mobilis-python-avance/issues/9) | Dataclass Station, Enum, validations métier + tests |
+| T-05 | [#10](https://github.com/abidiDev/mobilis-python-avance/issues/10) | Lecture CSV, collecte anomalies et tests |
+| T-06 | [#11](https://github.com/abidiDev/mobilis-python-avance/issues/11) | Intégration stations, CLI provisoire, documentation & recette |
+| T-07 | [#12](https://github.com/abidiDev/mobilis-python-avance/issues/12) | Pipeline de générateurs, dates, dédoublonnage + tests |
+| T-08 | [#13](https://github.com/abidiDev/mobilis-python-avance/issues/13) | Fréquentation, agrégations, mesure mémoire + tests |
+| T-09 | [#14](https://github.com/abidiDev/mobilis-python-avance/issues/14) | Lecture tarifs / abonnés et contrat de tarification |
+| T-10 | [#15](https://github.com/abidiDev/mobilis-python-avance/issues/15) | Moteur de facturation Decimal, R1-R12, tests E1-E6 |
+| T-11 | [#16](https://github.com/abidiDev/mobilis-python-avance/issues/16) | Agrégation revenus mensuels et comparaison avant/après + tests |
+| T-12 | [#17](https://github.com/abidiDev/mobilis-python-avance/issues/17) | Client HTTP, décorateur retry/backoff et mocks |
+| T-13 | [#18](https://github.com/abidiDev/mobilis-python-avance/issues/18) | Concurrence <=8, benchmark 3 stratégies, état comparé |
+| T-14 | [#19](https://github.com/abidiDev/mobilis-python-avance/issues/19) | CLI finale des 4 commandes, erreurs et chemins configurables |
+| T-15 | [#20](https://github.com/abidiDev/mobilis-python-avance/issues/20) | Installation sur machine vierge, README, métriques de qualité |
+| T-16 | [#21](https://github.com/abidiDev/mobilis-python-avance/issues/21) | Dossier technique, bilans individuels, présentation et répétition |
+
+A correspond à @abidiDev. Les tâches B restent sans assignation jusqu’à l’invitation du binôme. Les tâches sont liées dans le corps des US ; la hiérarchie native de sub-issues peut être ajoutée ensuite.
