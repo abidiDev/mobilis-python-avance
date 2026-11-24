@@ -8,6 +8,7 @@ from datetime import date
 from decimal import Decimal
 from email.message import Message
 from urllib.error import HTTPError
+from unittest.mock import Mock
 
 import pytest
 
@@ -205,3 +206,11 @@ def test_comparaison_trois_strategies_mesuree() -> None:
     mesures = mesurer_strategies(codes, charger)
     assert set(mesures) == {"sequentiel", "threads", "asyncio_to_thread"}
     assert all(valeur >= 0 for valeur in mesures.values())
+
+
+def test_transport_avec_mock_explicitement_verifie() -> None:
+    transport: Mock = Mock(return_value=b'{"code":"MB-0001","libres":3}')
+    client = ClientBornesHTTP("http://localhost:8080/", lire_octets=transport)
+    resultat = client.lire_json("stations/MB-0001")
+    assert resultat == {"code": "MB-0001", "libres": 3}
+    transport.assert_called_once_with("http://localhost:8080/stations/MB-0001", 5.0)
