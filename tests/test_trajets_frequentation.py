@@ -97,7 +97,7 @@ def test_identifiant_en_conflit_ne_remplace_pas_la_premiere_ligne(tmp_path: Path
         fichier,
         [
             _trajet_ligne("T1"),
-            _trajet_ligne("T1", "2026-08-03T10:00:00+02:00"),
+            _trajet_ligne("T1", "2026-08-03T08:05:00+02:00"),
         ],
     )
     journal = CollecteurAnomalies()
