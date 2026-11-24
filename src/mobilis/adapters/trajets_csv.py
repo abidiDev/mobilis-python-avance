@@ -71,7 +71,7 @@ def convertir_date(
     if not valeur:
         raise ValueError("date absente")
     try:
-        date_obj = datetime.fromisoformat(valeur.replace("Z", "+00:00"))
+        date_obj = datetime.fromisoformat(valeur)
     except ValueError:
         date_obj = datetime.strptime(valeur, "%d/%m/%Y %H:%M:%S")
     if date_obj.tzinfo is None:
@@ -177,49 +177,51 @@ class LecteurTrajetsGzip:
     def lire(self, signaler: SignalerAnomalie) -> Iterator[Trajet]:
         """Lire et fournir chaque trajet valide sans charger le CSV entier en RAM."""
         source = self.chemin.name
-        with tempfile.TemporaryDirectory(prefix="mobilis-dedup-") as tmp:
-            with closing(sqlite3.connect(str(Path(tmp) / "ids.sqlite"))) as db:
-                db.execute(
-                    "CREATE TABLE vus (trajet_id TEXT PRIMARY KEY, empreinte TEXT NOT NULL)"
+        with (
+            tempfile.TemporaryDirectory(prefix="mobilis-dedup-") as tmp,
+            closing(sqlite3.connect(str(Path(tmp) / "ids.sqlite"))) as db,
+            gzip.open(self.chemin, mode="rt", encoding="utf-8-sig", newline="") as flux,
+        ):
+            db.execute(
+                "CREATE TABLE vus (trajet_id TEXT PRIMARY KEY, empreinte TEXT NOT NULL)"
+            )
+            lecteur = csv.DictReader(flux)
+            if lecteur.fieldnames is None or tuple(lecteur.fieldnames) != _COLONNES:
+                raise ValueError(
+                    f"En-têtes CSV inattendus : {lecteur.fieldnames!r}"
                 )
-                with gzip.open(self.chemin, mode="rt", encoding="utf-8-sig", newline="") as flux:
-                    lecteur = csv.DictReader(flux)
-                    if lecteur.fieldnames is None or tuple(lecteur.fieldnames) != _COLONNES:
-                        raise ValueError(
-                            f"En-têtes CSV inattendus : {lecteur.fieldnames!r}"
-                        )
-                    for brut in lecteur:
-                        ligne = lecteur.line_num
-                        if None in brut or any(not isinstance(v, str) for v in brut.values()):
-                            _signaler(
-                                signaler, source, ligne, "", "ligne",
-                                "COLONNES_INVALIDES", NiveauAnomalie.ERREUR,
-                                str(brut), "Écarter cette ligne",
-                            )
-                            continue
-                        row = {str(k): str(v) for k, v in brut.items()}
-                        trajet = _normaliser(row, signaler, source, ligne)
-                        if trajet is None:
-                            continue
-                        empreinte = json.dumps(
-                            [row[k] for k in _COLONNES], ensure_ascii=False
-                        )
-                        result = db.execute(
-                            "INSERT OR IGNORE INTO vus VALUES (?, ?)",
-                            (trajet.trajet_id, empreinte),
-                        )
-                        if result.rowcount == 0:
-                            ancien = db.execute(
-                                "SELECT empreinte FROM vus WHERE trajet_id = ?",
-                                (trajet.trajet_id,),
-                            ).fetchone()
-                            identique = ancien is not None and ancien[0] == empreinte
-                            _signaler(
-                                signaler, source, ligne, trajet.trajet_id, "trajet_id",
-                                "DOUBLON_IDENTIQUE" if identique else "ID_EN_CONFLIT",
-                                NiveauAnomalie.INFO if identique else NiveauAnomalie.ERREUR,
-                                trajet.trajet_id,
-                                "Conserver la première ligne valide, écarter la répétition",
-                            )
-                            continue
-                        yield trajet
+            for brut in lecteur:
+                ligne = lecteur.line_num
+                if None in brut or any(not isinstance(v, str) for v in brut.values()):
+                    _signaler(
+                        signaler, source, ligne, "", "ligne",
+                        "COLONNES_INVALIDES", NiveauAnomalie.ERREUR,
+                        str(brut), "Écarter cette ligne",
+                    )
+                    continue
+                row = {str(k): str(v) for k, v in brut.items()}
+                trajet = _normaliser(row, signaler, source, ligne)
+                if trajet is None:
+                    continue
+                empreinte = json.dumps(
+                    [row[k] for k in _COLONNES], ensure_ascii=False
+                )
+                result = db.execute(
+                    "INSERT OR IGNORE INTO vus VALUES (?, ?)",
+                    (trajet.trajet_id, empreinte),
+                )
+                if result.rowcount == 0:
+                    ancien = db.execute(
+                        "SELECT empreinte FROM vus WHERE trajet_id = ?",
+                        (trajet.trajet_id,),
+                    ).fetchone()
+                    identique = ancien is not None and ancien[0] == empreinte
+                    _signaler(
+                        signaler, source, ligne, trajet.trajet_id, "trajet_id",
+                        "DOUBLON_IDENTIQUE" if identique else "ID_EN_CONFLIT",
+                        NiveauAnomalie.INFO if identique else NiveauAnomalie.ERREUR,
+                        trajet.trajet_id,
+                        "Conserver la première ligne valide, écarter la répétition",
+                    )
+                    continue
+                yield trajet
