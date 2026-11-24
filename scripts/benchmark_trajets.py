@@ -97,8 +97,12 @@ def _pic_rss_octets() -> int | None:
 
 
 def lancer_benchmark(
-    source: Path, *, facteur: int = 2, max_lignes: int | None = None,
-    tracer_memoire: bool = False, repertoire_temp: Path | None = None
+    source: Path,
+    *,
+    facteur: int = 2,
+    max_lignes: int | None = None,
+    tracer_memoire: bool = False,
+    repertoire_temp: Path | None = None,
 ) -> dict[str, object]:
     """Générer un fichier temporaire et mesurer le pipeline réel, puis nettoyer."""
     if not source.is_file():
@@ -123,9 +127,7 @@ def lancer_benchmark(
     with tempfile.TemporaryDirectory(prefix="mobilis-bench-", dir=racine) as repertoire:
         cible = Path(repertoire) / "trajets_synthetiques.csv.gz"
         debut_generation = time.perf_counter()
-        lignes = creer_fichier_synthetique(
-            source, cible, facteur=facteur, max_lignes=max_lignes
-        )
+        lignes = creer_fichier_synthetique(source, cible, facteur=facteur, max_lignes=max_lignes)
         temps_generation = time.perf_counter() - debut_generation
         anomalies: Counter[str] = Counter()
 
@@ -169,21 +171,29 @@ def main() -> None:
     parser.add_argument("source", type=Path, help="Fichier officiel trajets CSV.gz")
     parser.add_argument("--facteur", type=int, default=2, choices=[1, 2, 10, 100])
     parser.add_argument(
-        "--max-lignes", type=int, default=None,
+        "--max-lignes",
+        type=int,
+        default=None,
         help="Limiter l'échantillon par copie (pour tests rapides)",
     )
     parser.add_argument(
-        "--tracemalloc", action="store_true",
+        "--tracemalloc",
+        action="store_true",
         help="Tracer le pic d'allocations Python, avec ralentissement notable",
     )
     parser.add_argument(
-        "--temp-dir", type=Path, default=None,
+        "--temp-dir",
+        type=Path,
+        default=None,
         help="Répertoire temporaire, de préférence hors dépôt",
     )
     args = parser.parse_args()
     resultat = lancer_benchmark(
-        args.source, facteur=args.facteur, max_lignes=args.max_lignes,
-        tracer_memoire=args.tracemalloc, repertoire_temp=args.temp_dir
+        args.source,
+        facteur=args.facteur,
+        max_lignes=args.max_lignes,
+        tracer_memoire=args.tracemalloc,
+        repertoire_temp=args.temp_dir,
     )
     print(json.dumps(resultat, ensure_ascii=False, indent=2))
 

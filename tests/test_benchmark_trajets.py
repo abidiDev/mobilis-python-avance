@@ -87,9 +87,7 @@ def test_benchmark_x100_sur_petit_echantillon_et_cleanup(tmp_path: Path) -> None
 def test_mesure_tracemalloc_disponible_sur_petit_echantillon(tmp_path: Path) -> None:
     source = tmp_path / "officiel.csv.gz"
     _source(source)
-    rapport = lancer_benchmark(
-        source, facteur=2, tracer_memoire=True, repertoire_temp=tmp_path
-    )
+    rapport = lancer_benchmark(source, facteur=2, tracer_memoire=True, repertoire_temp=tmp_path)
     assert rapport["trajets_uniques_valides"] == 2
     assert isinstance(rapport["pic_tracemalloc_octets"], int)
     assert rapport["pic_tracemalloc_octets"] > 0
