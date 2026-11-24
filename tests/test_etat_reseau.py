@@ -7,8 +7,8 @@ import time
 from datetime import date
 from decimal import Decimal
 from email.message import Message
-from urllib.error import HTTPError
 from unittest.mock import Mock
+from urllib.error import HTTPError
 
 import pytest
 
