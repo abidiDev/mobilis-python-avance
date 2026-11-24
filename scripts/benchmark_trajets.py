@@ -12,7 +12,6 @@ import argparse
 import csv
 import gzip
 import json
-import os
 import shutil
 import sys
 import tempfile
