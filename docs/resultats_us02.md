@@ -99,3 +99,79 @@ soldes instantanés ni des mesures par jour.
 - Il manque encore la démonstration de montée en charge **x100** avec
   des identifiants non répétés artificiellement, ainsi que la revue
   des conventions temporelles.
+
+## Benchmark de scalabilité automatisé — outillage ajouté
+
+Le script `scripts/benchmark_trajets.py` fabrique dans un **répertoire
+temporaire** un vrai CSV.gz synthétique de taille ×1, ×2, ×10 ou ×100,
+puis exécute **le vrai adaptateur `LecteurTrajetsGzip`** et **le vrai
+service `analyser_frequentation`**. Les fichiers du kit restent inchangés ;
+le fichier créé est supprimé automatiquement à la fin du processus.
+
+Les IDs d'une copie reçoivent le suffixe `-S000`, `-S001`, etc.,
+pour que les copies ne soient pas prises pour des doublons entre elles.
+Les doublons qui existaient *à l'intérieur* du CSV original sont
+conservés. Le code vérifie l'espace libre avant toute création.
+
+### Validation automatique déjà exécutée
+
+La CI GitHub teste le multiplicateur **×100 sur un petit jeu de test**
+avec deux lignes sources : 200 lignes générées, 100 trajets uniques,
+100 doublons et aucun fichier temporaire restant après analyse. Elle
+vérifie également les sorties de `tracemalloc`, la taille de l'index
+SQLite, le rejet des facteurs hors de [1,100] et l'absence de modification
+du fichier source.
+
+**Ce test ×100 sur un petit échantillon ne prouve pas encore le
+traitement du fichier officiel multiplié par 100.** La preuve finale
+doit utiliser le fichier réel et être jointe au dossier technique.
+
+### Recette complète (sur le poste qui possède le kit)
+
+Après `git switch feature/2-trajets` et `git pull --ff-only` :
+
+```powershell
+# Mesure de référence avec les mêmes outils et options :
+.\.venv\Scripts\python.exe scripts/benchmark_trajets.py "..\mobilis-kit\donnees\trajets_2026-08_2026-10.csv.gz" --facteur 1
+
+# Mesure x100 : écrire automatiquement le rapport JSON hors du dépôt :
+.\.venv\Scripts\python.exe scripts/benchmark_trajets.py "..\mobilis-kit\donnees\trajets_2026-08_2026-10.csv.gz" --facteur 100 > "..\mobilis-benchmark-x100.json"
+```
+
+Le benchmark x100 est gourmand en calculs et occupe **potentiellement
+plusieurs Go de stockage temporaire** pendant son exécution ; ne pas
+le lancer sur un disque presque plein. `--tracemalloc` est facultatif :
+il ralentit sensiblement le programme. Sans lui, le script donne
+le **pic RSS du processus** ; il ne faut pas confondre RSS, allocations
+tracées par `tracemalloc` et taille de l'index SQLite.
+
+La référence sur le fichier officiel présentée plus haut a été mesurée
+par un membre sur son poste avec `tracemalloc` : **52,814 secondes**.
+Les temps entre deux exécutions ne sont comparables que si les mêmes
+options de mesure sont utilisées.
+
+### Valeurs attendues pour le CSV officiel répété 100 fois
+
+Si le jeu source est identique et qu'aucune nouvelle anomalie ne se crée
+par la réécriture des IDs :
+
+- **15 563 100** lignes de données synthétiques (155 631 × 100).
+- **15 501 100** trajets uniques (155 011 × 100).
+- **62 000** doublons exacts (620 × 100).
+- **14 500** durées négatives détectées (145 × 100).
+
+Ce sont des **valeurs théoriques**, à confronter au JSON réellement produit.
+Les stations doivent garder les mêmes classements : leurs soldes
+sont multipliés par 100 si toutes les données se retrouvent.
+
+### Critères de clôture
+
+- [x] Pipeline GZIP, normalisation, doublons et statistiques opérationnels
+      sur le fichier officiel (une exécution documentée).
+- [x] Tests fonctionnels et tests synthétiques x100 sur petit échantillon.
+- [x] Ruff, formatage, mypy strict et pytest vérifiés en CI.
+- [ ] Exécuter le véritable stress test **×100 sur le fichier officiel**,
+      conserver les chiffres mémoire, disque et temps.
+- [ ] Valider en binôme les conventions de dates, créneaux, doublons et
+      traitement des durées négatives.
+- [ ] Revue croisée de la PR puis fusion après validation.
