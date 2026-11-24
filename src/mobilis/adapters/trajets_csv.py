@@ -205,10 +205,12 @@ class LecteurTrajetsGzip:
 
     def __init__(self, chemin: Path):
         self.chemin = chemin
+        self.taille_index_octets: int | None = None
 
     def lire(self, signaler: SignalerAnomalie) -> Iterator[Trajet]:
         """Lire et fournir chaque trajet valide sans charger le CSV entier en RAM."""
         source = self.chemin.name
+        self.taille_index_octets = None
         with (
             tempfile.TemporaryDirectory(prefix="mobilis-dedup-") as tmp,
             closing(sqlite3.connect(str(Path(tmp) / "ids.sqlite"))) as db,
@@ -261,3 +263,5 @@ class LecteurTrajetsGzip:
                     )
                     continue
                 yield trajet
+            # Taille du fichier SQLite avant la suppression du répertoire temporaire.
+            self.taille_index_octets = (Path(tmp) / "ids.sqlite").stat().st_size
