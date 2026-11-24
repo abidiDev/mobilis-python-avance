@@ -42,9 +42,7 @@ def test_retry_codes_transitoires(code: int) -> None:
             raise _erreur_http(code, "2" if code == 429 else None)
         return 200
 
-    resultat = reessayer_http(tentatives=3, pause_initiale=0.1, dormir=attentes.append)(
-        appel
-    )()
+    resultat = reessayer_http(tentatives=3, pause_initiale=0.1, dormir=attentes.append)(appel)()
     assert resultat == 200
     assert essais == 3
     if code == 429:
@@ -155,16 +153,34 @@ def test_concurrence_plus_de_huit_refusee() -> None:
 def test_rapprochement_stations() -> None:
     stations = [
         Station(
-            "MB-1", "A", "Ville", 5, Decimal("49.0"), Decimal("1.0"),
-            StatutStation.EN_SERVICE, date(2020, 1, 1),
+            "MB-1",
+            "A",
+            "Ville",
+            5,
+            Decimal("49.0"),
+            Decimal("1.0"),
+            StatutStation.EN_SERVICE,
+            date(2020, 1, 1),
         ),
         Station(
-            "MB-2", "B", "Ville", 5, None, None,
-            StatutStation.EN_SERVICE, date(2020, 1, 1),
+            "MB-2",
+            "B",
+            "Ville",
+            5,
+            None,
+            None,
+            StatutStation.EN_SERVICE,
+            date(2020, 1, 1),
         ),
         Station(
-            "MB-3", "C", "Ville", 5, None, None,
-            StatutStation.EN_SERVICE, date(2020, 1, 1),
+            "MB-3",
+            "C",
+            "Ville",
+            5,
+            None,
+            None,
+            StatutStation.EN_SERVICE,
+            date(2020, 1, 1),
         ),
     ]
     etats = [
