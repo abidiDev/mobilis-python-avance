@@ -129,6 +129,8 @@ class ClientBornesHTTP:
             if page in vues:
                 raise ValueError("boucle de pagination détectée")
             vues.add(page)
-            reponse = self.lire_json(page)
-            elements, page = extraire(reponse)
+            actuelle = _url_sure(self.base_url, page)
+            reponse = self.lire_json(actuelle)
+            elements, prochaine = extraire(reponse)
             yield from elements
+            page = urljoin(actuelle, prochaine) if prochaine is not None else None

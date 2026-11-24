@@ -96,7 +96,10 @@ def test_client_json_et_pagination_sans_serveur() -> None:
 
     pages = list(client.iterer_pages("stations?page=1", extraire))
     assert [p["code"] for p in pages] == ["MB-1", "MB-2"]
-    assert len(urls) == 2
+    assert urls == [
+        "http://localhost:8080/api/stations?page=1",
+        "http://localhost:8080/api/stations?page=2",
+    ]
 
 
 def test_refuse_pagination_domaine_externe() -> None:
