@@ -27,17 +27,11 @@ def main() -> None:
     lecteur = LecteurTrajetsGzip(options.trajets)
     rapport, pic = analyser_avec_pic_memoire(lecteur.lire(signaler))
     stations_matinales = sorted(
-        (
-            (code, flux.solde_matin)
-            for code, flux in rapport.flux_stations.items()
-        ),
+        ((code, flux.solde_matin) for code, flux in rapport.flux_stations.items()),
         key=lambda valeur: valeur[1],
     )
     stations_soir = sorted(
-        (
-            (code, flux.solde_soir)
-            for code, flux in rapport.flux_stations.items()
-        ),
+        ((code, flux.solde_soir) for code, flux in rapport.flux_stations.items()),
         key=lambda valeur: valeur[1],
         reverse=True,
     )
