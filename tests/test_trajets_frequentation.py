@@ -33,8 +33,7 @@ def _trajet_ligne(
     debut: str = "2026-08-03T08:00:00+02:00",
     fin: str = "2026-08-03T08:30:00+02:00",
 ) -> list[str]:
-    return [identifiant, "", "V001", "mecanique", "MB-0001", debut,
-            "MB-0002", fin, "1200"]
+    return [identifiant, "", "V001", "mecanique", "MB-0001", debut, "MB-0002", fin, "1200"]
 
 
 def _gzip_csv(path: Path, lignes: list[list[str]]) -> None:
@@ -69,9 +68,7 @@ def test_heure_ambigue_signalee() -> None:
 
 def test_heure_inexistante_rejetee() -> None:
     with pytest.raises(ValueError, match="inexistante"):
-        convertir_date(
-            "29/03/2026 02:30:00", lambda _: None, "trajets.csv.gz", 2, "T1", "debut"
-        )
+        convertir_date("29/03/2026 02:30:00", lambda _: None, "trajets.csv.gz", 2, "T1", "debut")
 
 
 def test_lecture_en_flux_dedoublonne_et_signale(tmp_path: Path) -> None:
@@ -123,7 +120,11 @@ def test_distance_invalide_ne_supprime_pas_le_trajet(tmp_path: Path) -> None:
 def test_frequentation_matin_et_soir() -> None:
     trajets = (
         Trajet(
-            f"T{i}", None, "V1", TypeVelo.MECANIQUE, "MB-0001",
+            f"T{i}",
+            None,
+            "V1",
+            TypeVelo.MECANIQUE,
+            "MB-0001",
             datetime(2026, 8, 3, 6, tzinfo=UTC),
             "MB-0002",
             datetime(2026, 8, 3, 16, tzinfo=UTC),
@@ -141,8 +142,15 @@ def test_frequentation_matin_et_soir() -> None:
 
 def test_frequentation_weekend_et_retour_absent() -> None:
     trajet = Trajet(
-        "T1", None, "V1", TypeVelo.ELECTRIQUE, "MB-0001",
-        datetime(2026, 8, 2, 7, tzinfo=UTC), None, None, None,
+        "T1",
+        None,
+        "V1",
+        TypeVelo.ELECTRIQUE,
+        "MB-0001",
+        datetime(2026, 8, 2, 7, tzinfo=UTC),
+        None,
+        None,
+        None,
     )
     rapport, pic = analyser_avec_pic_memoire(iter([trajet]))
     assert rapport.sans_retour == 1

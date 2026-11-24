@@ -82,8 +82,14 @@ def convertir_date(
         alternative = date_obj.replace(fold=1)
         if date_obj.utcoffset() != alternative.utcoffset():
             _signaler(
-                signaler, source, ligne, identifiant, champ,
-                "HEURE_LOCALE_AMBIGUE", NiveauAnomalie.ALERTE, valeur,
+                signaler,
+                source,
+                ligne,
+                identifiant,
+                champ,
+                "HEURE_LOCALE_AMBIGUE",
+                NiveauAnomalie.ALERTE,
+                valeur,
                 "Première occurrence (fold=0), à valider en binôme",
             )
     return date_obj.astimezone(UTC)
@@ -99,17 +105,20 @@ def _normaliser(
     obligatoire = ("trajet_id", "velo_id", "type_velo", "station_depart", "debut")
     if not all(row[champ].strip() for champ in obligatoire):
         _signaler(
-            signaler, source, ligne, id_trajet, "ligne",
-            "CHAMP_OBLIGATOIRE_ABSENT", NiveauAnomalie.ERREUR,
+            signaler,
+            source,
+            ligne,
+            id_trajet,
+            "ligne",
+            "CHAMP_OBLIGATOIRE_ABSENT",
+            NiveauAnomalie.ERREUR,
             str({champ: row[champ] for champ in obligatoire}),
             "Écarter la ligne (modèle incomplet)",
         )
         return None
     try:
         type_velo = TypeVelo(row["type_velo"].strip().lower())
-        debut = convertir_date(
-            row["debut"], signaler, source, ligne, id_trajet, "debut"
-        )
+        debut = convertir_date(row["debut"], signaler, source, ligne, id_trajet, "debut")
         fin = (
             convertir_date(row["fin"], signaler, source, ligne, id_trajet, "fin")
             if row["fin"].strip()
@@ -117,8 +126,14 @@ def _normaliser(
         )
     except ValueError as exc:
         _signaler(
-            signaler, source, ligne, id_trajet, "date/type_velo",
-            "DONNEE_INVALIDE", NiveauAnomalie.ERREUR, str(exc),
+            signaler,
+            source,
+            ligne,
+            id_trajet,
+            "date/type_velo",
+            "DONNEE_INVALIDE",
+            NiveauAnomalie.ERREUR,
+            str(exc),
             "Écarter la ligne (valeur non interprétable)",
         )
         return None
@@ -131,23 +146,40 @@ def _normaliser(
                 raise ValueError("distance négative")
         except ValueError:
             _signaler(
-                signaler, source, ligne, id_trajet, "distance_m",
-                "DISTANCE_INVALIDE", NiveauAnomalie.ALERTE,
-                row["distance_m"], "Conserver le trajet avec distance inconnue",
+                signaler,
+                source,
+                ligne,
+                id_trajet,
+                "distance_m",
+                "DISTANCE_INVALIDE",
+                NiveauAnomalie.ALERTE,
+                row["distance_m"],
+                "Conserver le trajet avec distance inconnue",
             )
             distance = None
     arrivee = row["station_arrivee"].strip() or None
     if (fin is None) != (arrivee is None):
         _signaler(
-            signaler, source, ligne, id_trajet, "fin/station_arrivee",
-            "RETOUR_PARTIEL", NiveauAnomalie.ALERTE,
+            signaler,
+            source,
+            ligne,
+            id_trajet,
+            "fin/station_arrivee",
+            "RETOUR_PARTIEL",
+            NiveauAnomalie.ALERTE,
             f"fin={row['fin']}; station={row['station_arrivee']}",
             "Conserver et signaler, sans appliquer de pénalité ici",
         )
     if fin is not None and fin < debut:
         _signaler(
-            signaler, source, ligne, id_trajet, "fin",
-            "DUREE_NEGATIVE", NiveauAnomalie.ALERTE, row["fin"],
+            signaler,
+            source,
+            ligne,
+            id_trajet,
+            "fin",
+            "DUREE_NEGATIVE",
+            NiveauAnomalie.ALERTE,
+            row["fin"],
             "Conserver l'instant brut normalisé ; exclure les durées négatives des durées",
         )
     return Trajet(
@@ -182,14 +214,10 @@ class LecteurTrajetsGzip:
             closing(sqlite3.connect(str(Path(tmp) / "ids.sqlite"))) as db,
             gzip.open(self.chemin, mode="rt", encoding="utf-8-sig", newline="") as flux,
         ):
-            db.execute(
-                "CREATE TABLE vus (trajet_id TEXT PRIMARY KEY, empreinte TEXT NOT NULL)"
-            )
+            db.execute("CREATE TABLE vus (trajet_id TEXT PRIMARY KEY, empreinte TEXT NOT NULL)")
             lecteur = csv.DictReader(flux)
             if lecteur.fieldnames is None or tuple(lecteur.fieldnames) != _COLONNES:
-                raise ValueError(
-                    f"En-têtes CSV inattendus : {lecteur.fieldnames!r}"
-                )
+                raise ValueError(f"En-têtes CSV inattendus : {lecteur.fieldnames!r}")
             for brut in lecteur:
                 ligne = lecteur.line_num
                 if None in brut or any(not isinstance(v, str) for v in brut.values()):
@@ -203,9 +231,7 @@ class LecteurTrajetsGzip:
                 trajet = _normaliser(row, signaler, source, ligne)
                 if trajet is None:
                     continue
-                empreinte = json.dumps(
-                    [row[k] for k in _COLONNES], ensure_ascii=False
-                )
+                empreinte = json.dumps([row[k] for k in _COLONNES], ensure_ascii=False)
                 result = db.execute(
                     "INSERT OR IGNORE INTO vus VALUES (?, ?)",
                     (trajet.trajet_id, empreinte),
@@ -217,7 +243,11 @@ class LecteurTrajetsGzip:
                     ).fetchone()
                     identique = ancien is not None and ancien[0] == empreinte
                     _signaler(
-                        signaler, source, ligne, trajet.trajet_id, "trajet_id",
+                        signaler,
+                        source,
+                        ligne,
+                        trajet.trajet_id,
+                        "trajet_id",
                         "DOUBLON_IDENTIQUE" if identique else "ID_EN_CONFLIT",
                         NiveauAnomalie.INFO if identique else NiveauAnomalie.ERREUR,
                         trajet.trajet_id,
