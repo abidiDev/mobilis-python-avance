@@ -222,9 +222,15 @@ class LecteurTrajetsGzip:
                 ligne = lecteur.line_num
                 if None in brut or any(not isinstance(v, str) for v in brut.values()):
                     _signaler(
-                        signaler, source, ligne, "", "ligne",
-                        "COLONNES_INVALIDES", NiveauAnomalie.ERREUR,
-                        str(brut), "Écarter cette ligne",
+                        signaler,
+                        source,
+                        ligne,
+                        "",
+                        "ligne",
+                        "COLONNES_INVALIDES",
+                        NiveauAnomalie.ERREUR,
+                        str(brut),
+                        "Écarter cette ligne",
                     )
                     continue
                 row = {str(k): str(v) for k, v in brut.items()}
