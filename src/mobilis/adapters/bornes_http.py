@@ -71,7 +71,8 @@ def reessayer_http(
 def _telecharger_octets(url: str, timeout: float) -> bytes:
     requete = Request(url, headers={"Accept": "application/json"})
     with urlopen(requete, timeout=timeout) as reponse:
-        return reponse.read()
+        octets: bytes = reponse.read()
+        return octets
 
 
 def _url_sure(base: str, chemin: str) -> str:
