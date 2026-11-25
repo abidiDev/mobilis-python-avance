@@ -81,13 +81,31 @@ def _pic_rss_octets() -> int | None:
                 ("PeakPagefileUsage", ctypes.c_size_t),
             ]
 
+        from ctypes import wintypes
+
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        psapi = ctypes.WinDLL("psapi", use_last_error=True)
+        get_current_process = kernel32.GetCurrentProcess
+        get_current_process.argtypes = []
+        get_current_process.restype = wintypes.HANDLE
+        get_memory_info = psapi.GetProcessMemoryInfo
+        get_memory_info.argtypes = [
+            wintypes.HANDLE,
+            ctypes.POINTER(CompteursMemoire),
+            wintypes.DWORD,
+        ]
+        get_memory_info.restype = wintypes.BOOL
+
         compteur = CompteursMemoire()
         compteur.cb = ctypes.sizeof(compteur)
-        processus = ctypes.windll.kernel32.GetCurrentProcess()
-        succes = ctypes.windll.psapi.GetProcessMemoryInfo(
-            processus, ctypes.byref(compteur), ctypes.sizeof(compteur)
+        succes = get_memory_info(
+            get_current_process(),
+            ctypes.byref(compteur),
+            ctypes.sizeof(compteur),
         )
-        return int(compteur.PeakWorkingSetSize) if succes else None
+        if not succes:
+            raise ctypes.WinError(ctypes.get_last_error())
+        return int(compteur.PeakWorkingSetSize)
     if sys.platform in {"linux", "darwin"}:
         import resource
 
@@ -114,6 +132,9 @@ def lancer_benchmark(
 
     racine = repertoire_temp if repertoire_temp is not None else Path(tempfile.gettempdir())
     racine.mkdir(parents=True, exist_ok=True)
+    # Vérifier l'instrumentation Windows avant de lancer un test potentiellement long.
+    if sys.platform == "win32":
+        _pic_rss_octets()
     libre = shutil.disk_usage(racine).free
     besoin_estime = max(_GIB, source.stat().st_size * facteur * 20)
     reserve = 2 * _GIB
