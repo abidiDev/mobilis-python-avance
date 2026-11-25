@@ -90,3 +90,21 @@ def test_dedoublonner_garde_la_premiere_occurrence(tmp_path: Path) -> None:
 
     assert [t.trajet_id for t in trajets] == ["T1", "T2"]
     assert [(a.code_anomalie, a.ligne) for a in journal.elements] == [("DOUBLON_IDENTIQUE", 4)]
+
+
+def test_renvoi_dans_un_autre_format_est_un_doublon_identique(tmp_path: Path) -> None:
+    """Même instant écrit en ISO puis en UTC « Z » : c'est le même trajet."""
+    journal = CollecteurAnomalies()
+    lignes = [
+        LigneBrute(2, _valeurs("T1", debut="2026-08-03T08:00:00+02:00")),
+        LigneBrute(3, _valeurs("T1", debut="2026-08-03T06:00:00Z")),
+    ]
+    index = IndexDedoublonnage(tmp_path)
+    try:
+        lus = normaliser_lignes(lignes, journal.signaler, "t.csv.gz")
+        trajets = list(dedoublonner(lus, index, journal.signaler, "t.csv.gz"))
+    finally:
+        index.fermer()
+
+    assert len(trajets) == 1
+    assert [a.code_anomalie for a in journal.elements] == ["DOUBLON_IDENTIQUE"]

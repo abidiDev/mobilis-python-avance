@@ -228,3 +228,25 @@ la dépendance au stockage SQLite temporaire (2,73 Gio en ×100).
 Pour clôturer US-02 : valider les conventions de nettoyage et
 les créneaux avec le binôme, obtenir sa revue de la PR, puis
 fusionner lorsque ces points auront été acceptés.
+
+## Revérification indépendante par B — 25/11/2026 (après découpage du pipeline)
+
+Exécution sur le poste de B (Windows 11, Python 3.11.9), kit officiel non modifié,
+avec le lecteur découpé en trois générateurs et l'empreinte BLAKE2b du trajet normalisé.
+
+`mesurer_frequentation.py` : **155 011** trajets uniques, **620** `DOUBLON_IDENTIQUE`,
+**145** `DUREE_NEGATIVE`, **78** sans retour, mêmes cinq stations et mêmes soldes
+que ci-dessus ; pic `tracemalloc` **529 505 octets**.
+
+`benchmark_trajets.py --facteur 1` (sans `tracemalloc`) :
+
+| Mesure | Valeur |
+|---|---:|
+| Temps d'analyse | **7,227 s** |
+| Pic RSS du processus (correctif WinAPI) | **32 866 304 octets** (~31 Mio) |
+| Index SQLite de dédoublonnage | **8 130 560 octets** (~7,8 Mio) |
+
+L'index stocke désormais 16 octets par trajet au lieu de la ligne JSON complète :
+l'ancien index ×100 mesurait 2 930 905 088 octets, soit ~29,3 Mo par copie du fichier,
+contre ~8,1 Mo ici. Le correctif RSS Windows renvoie bien une valeur positive.
+Reste à mesurer le RSS sur ×2 et ×10 pour montrer qu'il ne croît pas avec la taille.

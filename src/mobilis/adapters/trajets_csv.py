@@ -2,7 +2,7 @@
 
 import csv
 import gzip
-import json
+import hashlib
 import sqlite3
 import tempfile
 from collections.abc import Iterable, Iterator
@@ -214,7 +214,6 @@ class TrajetLu:
     """Trajet normalisé accompagné de sa provenance, pour le dédoublonnage."""
 
     numero: int
-    brut: LigneBrute
     trajet: Trajet
 
 
@@ -250,11 +249,16 @@ def normaliser_lignes(
     for ligne in lignes:
         trajet = _normaliser(ligne.valeurs, signaler, source, ligne.numero)
         if trajet is not None:
-            yield TrajetLu(ligne.numero, ligne, trajet)
+            yield TrajetLu(ligne.numero, trajet)
 
 
-def _empreinte(lu: TrajetLu) -> str:
-    return json.dumps([lu.brut.valeurs[k] for k in _COLONNES], ensure_ascii=False)
+def _empreinte(trajet: Trajet) -> bytes:
+    """Empreinte de 16 octets du trajet *normalisé*.
+
+    Comparer après normalisation reconnaît un renvoi écrit dans un autre format
+    de date ; stocker un hash plutôt que la ligne réduit la taille de l'index.
+    """
+    return hashlib.blake2b(repr(trajet).encode("utf-8"), digest_size=16).digest()
 
 
 class IndexDedoublonnage:
@@ -266,9 +270,9 @@ class IndexDedoublonnage:
     def __init__(self, dossier: Path) -> None:
         self.chemin = dossier / "ids.sqlite"
         self._db = sqlite3.connect(str(self.chemin))
-        self._db.execute("CREATE TABLE vus (trajet_id TEXT PRIMARY KEY, empreinte TEXT NOT NULL)")
+        self._db.execute("CREATE TABLE vus (trajet_id TEXT PRIMARY KEY, empreinte BLOB NOT NULL)")
 
-    def ajouter(self, trajet_id: str, empreinte: str) -> str | None:
+    def ajouter(self, trajet_id: str, empreinte: bytes) -> bytes | None:
         """Enregistrer l'ID ; retourner l'empreinte déjà connue s'il existait."""
         resultat = self._db.execute(
             "INSERT OR IGNORE INTO vus VALUES (?, ?)", (trajet_id, empreinte)
@@ -278,7 +282,7 @@ class IndexDedoublonnage:
         ancien = self._db.execute(
             "SELECT empreinte FROM vus WHERE trajet_id = ?", (trajet_id,)
         ).fetchone()
-        return str(ancien[0])
+        return bytes(ancien[0])
 
     def fermer(self) -> None:
         self._db.close()
@@ -292,7 +296,7 @@ def dedoublonner(
 ) -> Iterator[Trajet]:
     """Étape 3 : émettre chaque trajet_id une seule fois (première ligne valide)."""
     for lu in trajets:
-        empreinte = _empreinte(lu)
+        empreinte = _empreinte(lu.trajet)
         ancienne = index.ajouter(lu.trajet.trajet_id, empreinte)
         if ancienne is None:
             yield lu.trajet
