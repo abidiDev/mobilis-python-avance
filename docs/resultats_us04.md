@@ -98,10 +98,11 @@ asynchrone natif ; c'est une orchestration asyncio de threads.
 - [x] Décorateur de retry 429/503/504 et Retry-After testé.
 - [x] Limite **8** contrôlée dans des tests de concurrence.
 - [x] Les erreurs individuelles n'interrompent pas toute la collecte.
-- [ ] Exécution **contre le véritable serveur officiel** depuis le poste
-      du membre, sortie JSON réelle conservée.
-- [ ] Mesure reproductible du temps total **< 15 s** (si elle est atteinte,
-      distinguer ce résultat de la collecte complète qui peut subir des 504).
+- [x] Première exécution **contre le véritable serveur officiel** depuis
+      le poste Windows du membre, sortie JSON ci-dessous.
+- [x] Une exécution avec **temps total < 15 s** (10,142 s) mesurée ;
+      **146/149 réponses**, 3 bornes en 504 : cette mesure valide le seuil
+      pour ce passage, pas une garantie sur chaque exécution aléatoire.
 - [ ] Comparaison des trois stratégies sur le serveur officiel (mode calme).
 - [ ] Rapprochement avec les **vraies stations validées d'US-01**, en
       distinguant les absences du référentiel et les échecs HTTP.
@@ -111,3 +112,51 @@ asynchrone natif ; c'est une orchestration asyncio de threads.
 La PR reste **draft** jusqu'à la recette avec le vrai serveur et la
 validation du binôme. Les tests unitaires sans serveur et le serveur
 réel constituent deux niveaux de preuves différents.
+
+## Première recette contre le simulateur officiel — 25/11/2026
+
+Exécution du script `scripts/mesurer_bornes.py` sous Windows,
+**serveur du kit en mode normal**. Résultats reproduits de la sortie
+du terminal transmise par l'utilisateur :
+
+| Mesure | Résultat observé |
+|---|---:|
+| Codes de station listés | **149** |
+| États reçus et normalisés | **146** |
+| Bornes sans réponse finale | **3** |
+| Stations vides | **MB-0097** |
+| Stations pleines | **0** |
+| Vélos mécaniques disponibles | **807** |
+| Vélos électriques disponibles | **829** |
+| Total vélos disponibles | **1 636** (=807+829) |
+| Places libres | **2 232** |
+| Durée pagination | **1,627 s** |
+| Durée collecte | **8,515 s** |
+| Durée totale | **10,142 s** |
+| Limite de concurrence configurée | **8** |
+| Critère de durée < 15 s | **Atteint sur cette exécution** |
+| Collecte complète (149/149) | **Non** |
+
+Bornes indisponibles (erreur finale **HTTP 504 Gateway Timeout**) :
+`MB-0079`, `MB-0100`, `MB-0150`.
+
+### Interprétation
+
+La collecte a bien parcouru toutes les pages, puis traité les 149 codes.
+Elle a conservé les **146 réussites** malgré les **3 erreurs individuelles**,
+sans inventer de valeurs pour les bornes injoignables.
+Sur ce passage, l'API a répondu en moins de 15 secondes. Le simulateur
+comporte toutefois de l'aléatoire : **une seule exécution ne prouve pas
+une borne supérieure de 15 secondes pour tous les passages**.
+
+Le nombre de bornes du serveur n'est **pas nécessairement égal** au
+nombre de stations du CSV de référence ; le rapprochement entre
+les deux sources dépend du référentiel validé dans US-01.
+
+### Travail restant dans la PR
+
+- Comparatif séquentiel / threads / asyncio.to_thread sur le serveur officiel
+  avec `--calme`, en conservant les mesures.
+- Comparaison aux capacités et identifiants du vrai CSV issu de US-01.
+- Commande finale `mobilis etat` prévue avec US-05.
+- Revue du binôme avant fusion.
