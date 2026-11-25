@@ -51,7 +51,9 @@ def main() -> None:
         "velos_electriques_total": sum(e.velos_electriques or 0 for e in etats),
         "places_libres_total": sum(e.places_libres for e in etats),
         "erreurs_par_station": resultat.erreurs,
-        "erreurs_par_type": dict(Counter(val.split(":", 1)[0] for val in resultat.erreurs.values())),
+        "erreurs_par_type": dict(
+            Counter(val.split(":", 1)[0] for val in resultat.erreurs.values())
+        ),
         "duree_liste_secondes": round(temps_liste, 3),
         "duree_collecte_secondes": round(temps_collecte, 3),
         "duree_totale_secondes": round(temps_total, 3),

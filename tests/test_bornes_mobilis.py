@@ -82,9 +82,7 @@ def test_parcours_pages_officielles_et_mapping_borne() -> None:
         ({"page": 1, "stations": [], "page_suivante": 1}, "Boucle"),
     ],
 )
-def test_pagination_rejette_responses_invalides(
-    reponse: dict[str, object], message: str
-) -> None:
+def test_pagination_rejette_responses_invalides(reponse: dict[str, object], message: str) -> None:
     client = ClientMobilisBornes(lire_octets=lambda url, timeout: json.dumps(reponse).encode())
     with pytest.raises(ValueError, match=message):
         client.lister_codes_stations()

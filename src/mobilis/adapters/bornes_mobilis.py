@@ -71,9 +71,7 @@ class ClientMobilisBornes:
             if type(numero) is not int or numero != page:
                 raise ValueError(f"Pagination Mobilis : page incohérente ({numero!r})")
             lot = document.get("stations")
-            if not isinstance(lot, list) or not all(
-                isinstance(code, str) and code for code in lot
-            ):
+            if not isinstance(lot, list) or not all(isinstance(code, str) and code for code in lot):
                 raise ValueError("Pagination Mobilis : stations doit contenir des codes")
             for code in cast(list[str], lot):
                 if code in codes_vus:

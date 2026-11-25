@@ -112,7 +112,6 @@ def mesurer_strategies(
 
 
 
-
 def collecter_threads_avec_erreurs(
     codes: Iterable[str],
     charger: Callable[[str], EtatBorne],
@@ -133,8 +132,7 @@ def collecter_threads_avec_erreurs(
     erreurs: dict[str, str] = {}
     with ThreadPoolExecutor(max_workers=max_simultanes) as pool:
         travaux = {
-            pool.submit(charger, code): (position, code)
-            for position, code in enumerate(liste)
+            pool.submit(charger, code): (position, code) for position, code in enumerate(liste)
         }
         for travail in as_completed(travaux):
             position, code = travaux[travail]
