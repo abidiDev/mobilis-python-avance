@@ -5,8 +5,8 @@ import gzip
 import json
 import sqlite3
 import tempfile
-from collections.abc import Iterator
-from contextlib import closing
+from collections.abc import Iterable, Iterator
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -195,8 +195,124 @@ def _normaliser(
     )
 
 
+# --- Pipeline de générateurs ------------------------------------------------
+# Chaque étape consomme l'itérateur de la précédente et produit le sien :
+#   lire_lignes_brutes -> normaliser_lignes -> dedoublonner
+# Une seule ligne circule à la fois dans toute la chaîne (évaluation paresseuse).
+
+
+@dataclass(frozen=True, slots=True)
+class LigneBrute:
+    """Ligne CSV telle que lue, avec son numéro physique (en-tête = 1)."""
+
+    numero: int
+    valeurs: dict[str, str]
+
+
+@dataclass(frozen=True, slots=True)
+class TrajetLu:
+    """Trajet normalisé accompagné de sa provenance, pour le dédoublonnage."""
+
+    numero: int
+    brut: LigneBrute
+    trajet: Trajet
+
+
+def lire_lignes_brutes(chemin: Path, signaler: SignalerAnomalie) -> Iterator[LigneBrute]:
+    """Étape 1 : décompresser et découper le CSV, sans interpréter les valeurs."""
+    source = chemin.name
+    with gzip.open(chemin, mode="rt", encoding="utf-8-sig", newline="") as flux:
+        lecteur = csv.DictReader(flux)
+        if lecteur.fieldnames is None or tuple(lecteur.fieldnames) != _COLONNES:
+            raise ValueError(f"En-têtes CSV inattendus : {lecteur.fieldnames!r}")
+        for brut in lecteur:
+            ligne = lecteur.line_num
+            if None in brut or any(not isinstance(v, str) for v in brut.values()):
+                _signaler(
+                    signaler,
+                    source,
+                    ligne,
+                    "",
+                    "ligne",
+                    "COLONNES_INVALIDES",
+                    NiveauAnomalie.ERREUR,
+                    str(brut),
+                    "Écarter cette ligne",
+                )
+                continue
+            yield LigneBrute(ligne, {str(k): str(v) for k, v in brut.items()})
+
+
+def normaliser_lignes(
+    lignes: Iterable[LigneBrute], signaler: SignalerAnomalie, source: str
+) -> Iterator[TrajetLu]:
+    """Étape 2 : convertir chaque ligne en Trajet ; les lignes invalides sont signalées."""
+    for ligne in lignes:
+        trajet = _normaliser(ligne.valeurs, signaler, source, ligne.numero)
+        if trajet is not None:
+            yield TrajetLu(ligne.numero, ligne, trajet)
+
+
+def _empreinte(lu: TrajetLu) -> str:
+    return json.dumps([lu.brut.valeurs[k] for k in _COLONNES], ensure_ascii=False)
+
+
+class IndexDedoublonnage:
+    """Index des trajet_id déjà émis, stocké dans un SQLite temporaire sur disque.
+
+    Un `set` en RAM grossirait avec le fichier ; le disque garde la mémoire bornée.
+    """
+
+    def __init__(self, dossier: Path) -> None:
+        self.chemin = dossier / "ids.sqlite"
+        self._db = sqlite3.connect(str(self.chemin))
+        self._db.execute("CREATE TABLE vus (trajet_id TEXT PRIMARY KEY, empreinte TEXT NOT NULL)")
+
+    def ajouter(self, trajet_id: str, empreinte: str) -> str | None:
+        """Enregistrer l'ID ; retourner l'empreinte déjà connue s'il existait."""
+        resultat = self._db.execute(
+            "INSERT OR IGNORE INTO vus VALUES (?, ?)", (trajet_id, empreinte)
+        )
+        if resultat.rowcount == 1:
+            return None
+        ancien = self._db.execute(
+            "SELECT empreinte FROM vus WHERE trajet_id = ?", (trajet_id,)
+        ).fetchone()
+        return str(ancien[0])
+
+    def fermer(self) -> None:
+        self._db.close()
+
+
+def dedoublonner(
+    trajets: Iterable[TrajetLu],
+    index: IndexDedoublonnage,
+    signaler: SignalerAnomalie,
+    source: str,
+) -> Iterator[Trajet]:
+    """Étape 3 : émettre chaque trajet_id une seule fois (première ligne valide)."""
+    for lu in trajets:
+        empreinte = _empreinte(lu)
+        ancienne = index.ajouter(lu.trajet.trajet_id, empreinte)
+        if ancienne is None:
+            yield lu.trajet
+            continue
+        identique = ancienne == empreinte
+        _signaler(
+            signaler,
+            source,
+            lu.numero,
+            lu.trajet.trajet_id,
+            "trajet_id",
+            "DOUBLON_IDENTIQUE" if identique else "ID_EN_CONFLIT",
+            NiveauAnomalie.INFO if identique else NiveauAnomalie.ERREUR,
+            lu.trajet.trajet_id,
+            "Conserver la première ligne valide, écarter la répétition",
+        )
+
+
 class LecteurTrajetsGzip:
-    """Implémentation de SourceTrajets avec index SQLite temporaire sur disque.
+    """Implémentation de SourceTrajets : assemble les trois étapes du pipeline.
 
     Un identifiant est émis au plus une fois. Les doublons exacts sont signalés ;
     les identifiants réutilisés avec un contenu différent sont signalés aussi.
@@ -211,57 +327,13 @@ class LecteurTrajetsGzip:
         """Lire et fournir chaque trajet valide sans charger le CSV entier en RAM."""
         source = self.chemin.name
         self.taille_index_octets = None
-        with (
-            tempfile.TemporaryDirectory(prefix="mobilis-dedup-") as tmp,
-            closing(sqlite3.connect(str(Path(tmp) / "ids.sqlite"))) as db,
-            gzip.open(self.chemin, mode="rt", encoding="utf-8-sig", newline="") as flux,
-        ):
-            db.execute("CREATE TABLE vus (trajet_id TEXT PRIMARY KEY, empreinte TEXT NOT NULL)")
-            lecteur = csv.DictReader(flux)
-            if lecteur.fieldnames is None or tuple(lecteur.fieldnames) != _COLONNES:
-                raise ValueError(f"En-têtes CSV inattendus : {lecteur.fieldnames!r}")
-            for brut in lecteur:
-                ligne = lecteur.line_num
-                if None in brut or any(not isinstance(v, str) for v in brut.values()):
-                    _signaler(
-                        signaler,
-                        source,
-                        ligne,
-                        "",
-                        "ligne",
-                        "COLONNES_INVALIDES",
-                        NiveauAnomalie.ERREUR,
-                        str(brut),
-                        "Écarter cette ligne",
-                    )
-                    continue
-                row = {str(k): str(v) for k, v in brut.items()}
-                trajet = _normaliser(row, signaler, source, ligne)
-                if trajet is None:
-                    continue
-                empreinte = json.dumps([row[k] for k in _COLONNES], ensure_ascii=False)
-                result = db.execute(
-                    "INSERT OR IGNORE INTO vus VALUES (?, ?)",
-                    (trajet.trajet_id, empreinte),
-                )
-                if result.rowcount == 0:
-                    ancien = db.execute(
-                        "SELECT empreinte FROM vus WHERE trajet_id = ?",
-                        (trajet.trajet_id,),
-                    ).fetchone()
-                    identique = ancien is not None and ancien[0] == empreinte
-                    _signaler(
-                        signaler,
-                        source,
-                        ligne,
-                        trajet.trajet_id,
-                        "trajet_id",
-                        "DOUBLON_IDENTIQUE" if identique else "ID_EN_CONFLIT",
-                        NiveauAnomalie.INFO if identique else NiveauAnomalie.ERREUR,
-                        trajet.trajet_id,
-                        "Conserver la première ligne valide, écarter la répétition",
-                    )
-                    continue
-                yield trajet
-            # Taille du fichier SQLite avant la suppression du répertoire temporaire.
-            self.taille_index_octets = (Path(tmp) / "ids.sqlite").stat().st_size
+        with tempfile.TemporaryDirectory(prefix="mobilis-dedup-") as tmp:
+            index = IndexDedoublonnage(Path(tmp))
+            try:
+                lignes = lire_lignes_brutes(self.chemin, signaler)
+                normalises = normaliser_lignes(lignes, signaler, source)
+                yield from dedoublonner(normalises, index, signaler, source)
+                # Taille du fichier SQLite avant la suppression du répertoire temporaire.
+                self.taille_index_octets = index.chemin.stat().st_size
+            finally:
+                index.fermer()
