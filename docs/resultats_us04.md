@@ -103,7 +103,8 @@ asynchrone natif ; c'est une orchestration asyncio de threads.
 - [x] Une exécution avec **temps total < 15 s** (10,142 s) mesurée ;
       **146/149 réponses**, 3 bornes en 504 : cette mesure valide le seuil
       pour ce passage, pas une garantie sur chaque exécution aléatoire.
-- [ ] Comparaison des trois stratégies sur le serveur officiel (mode calme).
+- [x] Comparaison des trois stratégies sur le serveur officiel (mode calme),
+      une exécution documentée ci-dessous.
 - [ ] Rapprochement avec les **vraies stations validées d'US-01**, en
       distinguant les absences du référentiel et les échecs HTTP.
 - [ ] Intégration avec la CLI installée `mobilis etat` (ticket US-05).
@@ -156,7 +157,51 @@ les deux sources dépend du référentiel validé dans US-01.
 ### Travail restant dans la PR
 
 - Comparatif séquentiel / threads / asyncio.to_thread sur le serveur officiel
-  avec `--calme`, en conservant les mesures.
+  avec `--calme` : **première mesure archivée ci-dessous**.
 - Comparaison aux capacités et identifiants du vrai CSV issu de US-01.
 - Commande finale `mobilis etat` prévue avec US-05.
 - Revue du binôme avant fusion.
+
+## Recette comparative en mode calme — 25/11/2026
+
+Second passage effectué sur le vrai `serveur_bornes.py --calme` avec
+`scripts/mesurer_bornes.py --comparer-strategies` sous Windows.
+Les valeurs ci-dessous proviennent de la sortie du terminal
+transmise par l'utilisateur (fin du JSON ; les premiers champs de cette
+sortie n'ont pas été recopiés).
+
+| Indicateur | Résultat observé |
+|---|---:|
+| Erreurs par station | **Aucune** (`{}`) |
+| Erreurs par type | **Aucune** (`{}`) |
+| Collecte complète | **Oui** |
+| Places libres totales | **2 270** |
+| Pagination | **0,096 s** |
+| Collecte principale | **0,732 s** |
+| Total de la collecte principale | **0,829 s** |
+| Limite de concurrence | **8** |
+| Seuil de 15 secondes | **Atteint** |
+
+### Comparaison des trois stratégies (une exécution chacune)
+
+| Méthode | Durée mesurée |
+|---|---:|
+| Séquentielle | **0,529 s** |
+| `ThreadPoolExecutor` (8 maximum) | **0,562 s** |
+| `asyncio.to_thread` (sémaphore 8) | **0,229 s** |
+
+Sur **cette exécution particulière**, l'approche `asyncio.to_thread`
+est la plus rapide. Il ne faut pas généraliser ce classement à partir
+d'une unique mesure : en mode calme le serveur ne simule plus la lenteur
+réseau, et les écarts très courts sont sensibles au bruit de mesure,
+à l'ordonnancement et à l'état du serveur. `asyncio.to_thread`
+s'appuie lui aussi sur des threads et n'est **pas un transport HTTP
+asynchrone natif**. Les passages sont successifs et les stocks peuvent
+légèrement évoluer.
+
+**Bilan US-04 :** le schéma HTTP officiel, le retry, la collecte bornée
+à 8, la tolérance aux erreurs et les mesures en mode normal et calme
+sont documentés. Les dépendances transverses restantes sont
+le rapprochement avec le référentiel validé (US-01),
+la commande installée `mobilis etat` (US-05)
+et la revue de code du binôme avant fusion.
