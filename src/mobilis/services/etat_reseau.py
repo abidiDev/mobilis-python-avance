@@ -111,7 +111,6 @@ def mesurer_strategies(
     return mesures
 
 
-
 def collecter_threads_avec_erreurs(
     codes: Iterable[str],
     charger: Callable[[str], EtatBorne],
@@ -144,6 +143,7 @@ def collecter_threads_avec_erreurs(
         etats=tuple(etats_par_position[pos] for pos in sorted(etats_par_position)),
         erreurs=erreurs,
     )
+
 
 def comparer_etats(stations: Iterable[Station], etats: Iterable[EtatBorne]) -> RapportEtat:
     """Comparer les compteurs du serveur aux capacités du référentiel.
