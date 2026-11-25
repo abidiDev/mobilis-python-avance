@@ -140,7 +140,7 @@ def collecter_threads_avec_erreurs(
             position, code = travaux[travail]
             try:
                 etats_par_position[position] = travail.result()
-            except (OSError, TimeoutError, ValueError) as exc:
+            except (OSError, TimeoutError, ValueError, TypeError) as exc:
                 erreurs[code] = f"{type(exc).__name__}: {exc}"
     return ResultatCollecte(
         etats=tuple(etats_par_position[pos] for pos in sorted(etats_par_position)),

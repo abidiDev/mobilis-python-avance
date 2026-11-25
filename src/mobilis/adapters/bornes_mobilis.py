@@ -99,8 +99,10 @@ class ClientMobilisBornes:
         elec = _entier("velos_electriques", document.get("velos_electriques"))
         libres = _entier("places_libres", document.get("places_libres"))
         brut = document.get("horodatage")
-        if not isinstance(brut, str):
+        if brut is None:
             raise ValueError(f"Réponse pour {code} : horodatage absent")
+        if not isinstance(brut, str):
+            raise TypeError(f"Réponse pour {code} : horodatage doit être une chaîne")
         try:
             horodatage = datetime.fromisoformat(brut)
         except ValueError as exc:
