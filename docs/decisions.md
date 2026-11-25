@@ -34,3 +34,14 @@ Les signatures HTTP/facturation spécifiques ne sont pas figées avant lecture d
 Voir [contrats_t03.md](contrats_t03.md) pour les définitions précises
 et les tâches de validation du binôme. **PR de centralisation proposée,
 validation du binôme attendue.**
+
+## 2026-11-25 — US-01 Stations : décisions de nettoyage (proposées par B, à valider par A)
+
+- `stations.csv` est lu en CP1252, séparateur `;`, décimales à virgule.
+- Statuts normalisés vers `StatutStation` (`HS` = hors service) ; statut inconnu → ligne écartée.
+- Capacité `NC` → `None` ; la station reste dans le référentiel mais n'est pas exploitable.
+- Latitude inférieure à la longitude → colonnes permutées (2 cas, réseau vers 45,7° N / 4,8° E).
+- Code répété → version la plus récemment mise en service retenue (3 codes).
+- Station **exploitable** = en service **et** capacité connue (142 sur 150).
+
+Détail chiffré et tests associés : [resultats_us01.md](resultats_us01.md).
