@@ -154,5 +154,5 @@ def test_collecte_continue_si_borne_504_et_limite_huit() -> None:
 
 
 def test_collecte_rejette_plus_de_huit() -> None:
-    with pytest.raises(ValueError, match="huit"):
+    with pytest.raises(ValueError, match="1 et 8"):
         collecter_threads_avec_erreurs([], lambda code: EtatBorne(code, 1, 1), max_simultanes=9)
