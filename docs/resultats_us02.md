@@ -31,8 +31,7 @@ matinal et les cinq au plus fort solde entrant du soir.
   ce script ne produit pas de journal détaillé ligne par ligne.
 - `tracemalloc` mesure le pic des allocations **Python tracées** ;
   il ne mesure ni le fichier SQLite temporaire ni toute la mémoire
-  du processus. Un essai sur un fichier artificiel 100 fois plus grand
-  est nécessaire pour documenter la scalabilité avant le rendu.
+  du processus. L'essai complet ×100 du 25/11/2026 est documenté ci-dessous.
 - Les valeurs officielles ne doivent être annoncées qu'après une
   exécution du script sur les exports du kit, conservés hors Git.
 
@@ -96,9 +95,8 @@ soldes instantanés ni des mesures par jour.
 - `tracemalloc` ne mesure **pas** la taille du fichier SQLite temporaire
   sur le disque ni la mémoire système totale. Mesurer aussi le temps, la
   taille du stockage temporaire et idéalement la mémoire du processus.
-- Il manque encore la démonstration de montée en charge **x100** avec
-  des identifiants non répétés artificiellement, ainsi que la revue
-  des conventions temporelles.
+- L'essai ×100 a été exécuté le 25/11/2026 ; reste à relever la mémoire
+  résidente sur Windows et à valider les conventions temporelles.
 
 ## Benchmark de scalabilité automatisé — outillage ajouté
 
@@ -123,8 +121,7 @@ SQLite, le rejet des facteurs hors de [1,100] et l'absence de modification
 du fichier source.
 
 **Ce test ×100 sur un petit échantillon ne prouve pas encore le
-traitement du fichier officiel multiplié par 100.** La preuve finale
-doit utiliser le fichier réel et être jointe au dossier technique.
+traitement du fichier officiel multiplié par 100.** Un essai complet utilisant le fichier réel est maintenant consigné plus bas.
 
 ### Recette complète (sur le poste qui possède le kit)
 
@@ -160,7 +157,7 @@ par la réécriture des IDs :
 - **62 000** doublons exacts (620 × 100).
 - **14 500** durées négatives détectées (145 × 100).
 
-Ce sont des **valeurs théoriques**, à confronter au JSON réellement produit.
+Ces valeurs ont été **confirmées par l'exécution réelle ×100 du 25/11/2026**.
 Les stations doivent garder les mêmes classements : leurs soldes
 sont multipliés par 100 si toutes les données se retrouvent.
 
@@ -170,8 +167,64 @@ sont multipliés par 100 si toutes les données se retrouvent.
       sur le fichier officiel (une exécution documentée).
 - [x] Tests fonctionnels et tests synthétiques x100 sur petit échantillon.
 - [x] Ruff, formatage, mypy strict et pytest vérifiés en CI.
-- [ ] Exécuter le véritable stress test **×100 sur le fichier officiel**,
-      conserver les chiffres mémoire, disque et temps.
+- [x] Exécuter le stress test **×100 complet** et conserver les chiffres de
+      temps, fichiers et index SQLite (mesure RAM non disponible dans ce test).
+- [ ] Vérifier la mesure du pic RSS avec le correctif Windows, et documenter
+      l'évolution de la mémoire sur une exécution mesurée.
 - [ ] Valider en binôme les conventions de dates, créneaux, doublons et
       traitement des durées négatives.
 - [ ] Revue croisée de la PR puis fusion après validation.
+
+## Recette complète ×100 exécutée sur Windows — 25/11/2026
+
+Les valeurs suivantes proviennent de la **sortie du script envoyée par
+l'utilisateur**, après exécution locale sur le fichier officiel multiplié
+100 fois. Ce ne sont ni une extrapolation ni un test CI de 200 lignes.
+
+| Mesure | Observation |
+|---|---:|
+| Lignes synthétiques | **15 563 100** |
+| Trajets uniques | **15 501 100** |
+| Doublons strictement identiques | **62 000** |
+| Durées négatives signalées | **14 500** |
+| Temps de génération | 187,069 s |
+| Temps d'analyse | **1 280,943 s** (21 min 20,943 s) |
+| Temps génération + analyse | 1 468,012 s (24 min 28,012 s) |
+| Index de dédoublonnage SQLite | **2 930 905 088 octets** (~2,73 Gio) |
+| CSV.gz synthétique | **461 392 647 octets** (~440 Mio) |
+| Espace disque libre avant | 27 794 538 496 octets |
+| Nettoyage automatique | Vrai |
+
+Les trois comptages (trajets uniques, doublons, durées négatives)
+correspondent exactement à ×100 par rapport au jeu officiel.
+La mémoire Python tracée est `null` car l'option
+`--tracemalloc` **n'était pas activée** lors de cet essai.
+Le pic RSS du processus est également `null` : **le premier
+instrument Windows n'a pas rapporté de valeur exploitable**.
+Par conséquent, **le stress-test complet a fonctionné, mais il ne
+permet pas d'affirmer une consommation RAM mesurée et constante**.
+
+Correctif ajouté à `scripts/benchmark_trajets.py` : déclaration
+explicite des signatures WinAPI (types du HANDLE, pointeur du
+`PROCESS_MEMORY_COUNTERS` et type du résultat) et vérification de
+la disponibilité du compteur Windows avant un long lancement.
+Ce correctif doit être testé **sur la machine Windows**, la CI Linux
+ne pouvant valider l'appel à l'API native Windows.
+
+**Vérification rapide sur Windows, sans refaire le test ×100** :
+
+```powershell
+git pull --ff-only
+.\.venv\Scripts\python.exe -c "from scripts.benchmark_trajets import _pic_rss_octets; print(_pic_rss_octets())"
+```
+
+Le résultat attendu est un nombre entier **strictement positif**
+(en octets). Une valeur positive obtenue après ce correctif ne
+rétroconstitue pas rétroactivement le pic RAM du test ×100.
+Pour montrer la stabilité mémoire, comparer des mesures RSS réelles
+sur des tailles différentes, par exemple ×1, ×2 et ×10, et expliquer
+la dépendance au stockage SQLite temporaire (2,73 Gio en ×100).
+
+Pour clôturer US-02 : valider les conventions de nettoyage et
+les créneaux avec le binôme, obtenir sa revue de la PR, puis
+fusionner lorsque ces points auront été acceptés.
