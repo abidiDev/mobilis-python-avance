@@ -2,7 +2,7 @@
 
 **Issue parente :** [#4](https://github.com/abidiDev/mobilis-python-avance/issues/4)  
 **Tâches :** [#17 T-12](https://github.com/abidiDev/mobilis-python-avance/issues/17) et [#18 T-13](https://github.com/abidiDev/mobilis-python-avance/issues/18)  
-**État :** cadrage initial ; **aucune fonctionnalité métier implémentée dans cette branche pour le moment**.
+**État :** client HTTP et mapping du simulateur développés ; recette réelle et revue à terminer.
 
 ## Objectif utilisateur
 
@@ -52,9 +52,9 @@ en maîtrisant le temps de réponse et les appels concurrents.
 
 ## Critères de réception
 
-- [ ] Contrat HTTP conforme au vrai simulateur (pagination incluse).
-- [ ] Décorateur retry testé pour 503/504/429 et `Retry-After`.
-- [ ] Jusqu'à 8 appels simultanés, maximum vérifié automatiquement.
+- [x] Contrat HTTP conforme au code du vrai simulateur (pagination incluse).
+- [x] Décorateur retry testé pour 503/504/429 et `Retry-After`.
+- [x] Jusqu'à 8 appels simultanés, maximum vérifié automatiquement.
 - [ ] Benchmark séquentiel/threads/asyncio reproductible et argumenté.
 - [ ] Temps de la collecte inférieur à 15 s, preuve mesurée.
 - [ ] Comparaison avec le référentiel validé, anomalies signalées.

@@ -1,61 +1,113 @@
-# US-04 — API bornes : état technique et validation
+# US-04 — État temps réel : intégration au simulateur officiel
 
-## Fonctionnalités réellement codées
+## Source vérifiée (25/11/2026)
 
-- `adapters/bornes_http.py` : client HTTP JSON avec URL de base configurable,
-  transport injectable pour les tests et pagination via extracteur.
-- Décorateur `reessayer_http` : 429, 503, 504, tentatives bornées,
-  backoff exponentiel et respect de `Retry-After`.
-- `services/etat_reseau.py` : `EtatBorne` normalisé, détection des stations
-  vides/pleines, capacités incohérentes, inconnues et sans réponse.
-- Collectes `collecter_sequentiel`, `collecter_threads` (1 à 8 workers),
-  et `collecter_async` (sémaphore 1 à 8).
-- `mesurer_strategies` mesure trois durées ; le résultat réel doit être
-  obtenu avec le simulateur officiel dans des conditions identiques.
-- Tests sans serveur réel, basés sur des réponses synthétiques et des mocks
-  injectés directement dans le transport HTTP.
+Fichier transmis par le membre du binôme : **`mobilis-kit/outils/serveur_bornes.py`**
+(kit PYA-701, serveur HTTP local, non modifié).
 
-## Limites importantes — non terminé au regard de l'énoncé
+Contrat HTTP découvert **dans le code source du simulateur** :
 
-Le fichier **`mobilis-kit/outils/serveur_bornes.py`** n'a pas été
-fourni dans le dépôt GitHub, ni dans les pièces visibles lors de ce
-développement. Ses **routes, champs de réponse, pagination, scénarios
-d'erreur et délai de réponse ne sont donc pas encore vérifiés**.
+- Adresse : `http://127.0.0.1:8765/`, via `ThreadingHTTPServer`.
+- **Authentification** : `X-Api-Key: demo-mobilis-2026` sur chaque GET.
+- `GET /stations?page=N` : `{"page": N, "stations": ["MB-0001",...], "page_suivante": N+1|null}`, **25 codes/page**.
+- `GET /stations/<code>` : `{"code": "...", "velos_mecaniques": int, "velos_electriques": int, "places_libres": int, "horodatage": "...+00:00"}`.
+- Capacité d'appels simultanés : **8**. Au-delà, le serveur retourne **429** et `Retry-After: 1`.
+- En mode normal, le serveur est parfois lent, retourne aléatoirement **503**, et certaines stations `hors_ligne` retournent **504**.
+- `--calme` désactive les délais, erreurs 503 et états hors-ligne pour déboguer.
 
-Par conséquent, il manque encore :
+**Les routes et champs ci-dessus sont tirés du code officiel, pas des hypothèses.**
 
-1. Lire le code du simulateur et définir l'extracteur de pages adapté
-   au schéma **réel**, sans inventer de route ou champ.
-2. Ajouter l'adaptateur qui convertit ses réponses en `EtatBorne`,
-   puis brancher la collecte sur toutes les stations.
-3. Coupler avec le référentiel validé de **US-01** et son traitement
-   des doublons de stations.
-4. Mesurer la réponse réelle sur toute la population (objectif < 15 s)
-   et comparer séquentiel/threads/asyncio.
-5. Brancher la commande finale `mobilis etat` dans l'US-05.
-6. Documenter les anomalies API constatées et leurs volumes.
+## Fonctionnalités codées
 
-**Nuance de mesure :** `collecter_async` repose aujourd'hui sur
-`asyncio.to_thread` (pont entre asyncio et un client HTTP synchrone).
-Il ne s'agit **pas** d'un client de socket HTTP asynchrone natif. Le
-préciser au jury et le mesurer comme tel ; ne pas le présenter comme
-une preuve de supériorité du protocole asyncio.
+- `adapters/bornes_http.py` : client HTTP générique, clé API en en-tête
+  (sans casser l'injection de transport des tests), JSON, protection contre
+  URL externe, tentatives limitées sur 429/503/504 et prise en compte de
+  `Retry-After`.
+- `adapters/bornes_mobilis.py` : adaptateur spécialisé qui parcourt
+  toutes les pages, valide les codes et les réponses, vérifie l'horodatage
+  avec fuseau, normalise **mécaniques + électriques = vélos disponibles**.
+- `services/etat_reseau.py` : `EtatBorne`, algorithmes séquentiel,
+  ThreadPoolExecutor **max 8**, asyncio avec `to_thread`,
+  comparaison avec le référentiel US-01, et collecte résiliente
+  `collecter_threads_avec_erreurs` : en cas de HTTP 504 définitif,
+  la réponse manquante est signalée sans arrêter les autres.
+- `scripts/mesurer_bornes.py` : lance la vraie collecte, affiche
+  nombre de bornes, succès/échecs par station, stations vides/pleines,
+  totaux mécaniques/électriques, temps de pagination, collecte et total,
+  et indique séparément si le temps total est **< 15 s**.
+- `tests/test_bornes_mobilis.py` : tests du schéma exact, header API,
+  pagination normale/invalide, champs invalides, 401 non réessayé,
+  récupération partielle sur 504 et borne de concurrence à 8.
+- `tests/test_etat_reseau.py` : retry 429/503/504, Retry-After,
+  timeouts/mocks, threads/asyncio et comparaison aux stations de référence.
 
-## Exemples d'utilisation des briques (après mapping serveur)
+## Recette réelle à effectuer sur Windows
 
-```python
-from mobilis.services.etat_reseau import collecter_threads, comparer_etats
+Depuis la racine du dépôt `mobilis`, ouvrir **deux terminaux**.
 
-# charger_etat(code_station) est une fonction à écrire en fonction
-# des endpoints réels de serveur_bornes.py. Elle retourne EtatBorne.
-# etats = collecter_threads(codes_stations, charger_etat, max_simultanes=8)
-# rapport = comparer_etats(stations_validees, etats)
+### Terminal 1 — démarrer le vrai simulateur
+
+```powershell
+.\.venv\Scripts\python.exe "..\mobilis-kit\outils\serveur_bornes.py"
 ```
 
-## Recette à joindre au dossier
+Si le simulateur officiel a été enregistré ailleurs,
+adapter uniquement le **chemin du fichier**, sans le modifier.
+Conserver ce terminal ouvert.
 
-- Extraits du simulateur officiel et mapping JSON justifié.
-- Exécution des tests `pytest` sans lancer le serveur en CI.
-- Commandes, mesures répétées et environnement de benchmark.
-- Captures des résultats, cas 429/503/504 et conformité des 8 requêtes.
-- Explication du choix technique threads vs asyncio avec limites.
+### Terminal 2 — exécuter la collecte réelle
+
+```powershell
+git switch feature/4-etat-temps-reel
+git pull --ff-only
+.\.venv\Scripts\python.exe -m pip install -e ".[dev]"
+.\.venv\Scripts\python.exe scripts/mesurer_bornes.py
+```
+
+La commande affiche un **JSON** contenant `duree_totale_secondes`
+et `objectif_moins_15_secondes`, ainsi que `stations_en_erreur`
+et `erreurs_par_station`. En mode normal, le nombre d'échecs
+et le délai peuvent varier : le simulateur inclut volontairement des
+lenteurs et des erreurs aléatoires.
+
+### Comparaison des trois stratégies (mode calme)
+
+Arrêter le premier serveur avec Ctrl+C puis lancer :
+
+```powershell
+.\.venv\Scripts\python.exe "..\mobilis-kit\outils\serveur_bornes.py" --calme
+```
+
+Dans le second terminal :
+
+```powershell
+.\.venv\Scripts\python.exe scripts/mesurer_bornes.py --comparer-strategies
+```
+
+La comparaison se fait sur les mêmes **codes** et la même machine,
+mais le simulateur peut faire légèrement varier les stocks entre
+les consultations ; l'ordre des expériences peut aussi influer.
+
+**Attention** : `asyncio.to_thread` n'est pas un vrai client HTTP
+asynchrone natif ; c'est une orchestration asyncio de threads.
+
+## État de la réception
+
+- [x] Contrat exact du simulateur inspecté et intégré.
+- [x] Authentification et schéma JSON prévus et testés avec des mocks.
+- [x] Décorateur de retry 429/503/504 et Retry-After testé.
+- [x] Limite **8** contrôlée dans des tests de concurrence.
+- [x] Les erreurs individuelles n'interrompent pas toute la collecte.
+- [ ] Exécution **contre le véritable serveur officiel** depuis le poste
+      du membre, sortie JSON réelle conservée.
+- [ ] Mesure reproductible du temps total **< 15 s** (si elle est atteinte,
+      distinguer ce résultat de la collecte complète qui peut subir des 504).
+- [ ] Comparaison des trois stratégies sur le serveur officiel (mode calme).
+- [ ] Rapprochement avec les **vraies stations validées d'US-01**, en
+      distinguant les absences du référentiel et les échecs HTTP.
+- [ ] Intégration avec la CLI installée `mobilis etat` (ticket US-05).
+- [ ] Revue du binôme et fusion PR #27.
+
+La PR reste **draft** jusqu'à la recette avec le vrai serveur et la
+validation du binôme. Les tests unitaires sans serveur et le serveur
+réel constituent deux niveaux de preuves différents.
