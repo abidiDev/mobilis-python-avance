@@ -1,7 +1,8 @@
-"""Client HTTP sortant pour le simulateur Mobilis : retries et pagination adaptable.
+"""Client HTTP sortant : authentification, retries et pagination.
 
-Les routes et le schéma exacts sont fournis par le simulateur externe.
-Cet adaptateur n'invente ni endpoint ni format de réponse.
+Le simulateur Mobilis (kit PYA-701) utilise la clé dans X-Api-Key.
+L'API particulière et son schéma de réponse sont intégrés dans
+bornes_mobilis.py, en conservant cet adaptateur HTTP injectable.
 """
 
 import json
@@ -68,8 +69,11 @@ def reessayer_http(
     return decorer
 
 
-def _telecharger_octets(url: str, timeout: float) -> bytes:
-    requete = Request(url, headers={"Accept": "application/json"})
+def _telecharger_octets(url: str, timeout: float, api_key: str | None = None) -> bytes:
+    entetes = {"Accept": "application/json"}
+    if api_key is not None:
+        entetes["X-Api-Key"] = api_key
+    requete = Request(url, headers=entetes)
     with urlopen(requete, timeout=timeout) as reponse:
         octets: bytes = reponse.read()
         return octets
@@ -96,6 +100,7 @@ class ClientBornesHTTP:
         pause_initiale: float = 0.1,
         lire_octets: Callable[[str, float], bytes] = _telecharger_octets,
         dormir: Callable[[float], None] = time.sleep,
+        api_key: str | None = None,
     ) -> None:
         if timeout <= 0:
             raise ValueError("timeout doit être positif")
@@ -103,9 +108,18 @@ class ClientBornesHTTP:
         if urlparse(self.base_url).scheme not in ("http", "https"):
             raise ValueError("base_url doit utiliser HTTP ou HTTPS")
         self.timeout = timeout
+        # Les transports injectés restent indépendants et gardent leur
+        # signature (url, timeout) pour permettre des tests sans HTTP réel.
+        transport = lire_octets
+        if lire_octets is _telecharger_octets and api_key is not None:
+
+            def transport_authentifie(url: str, limite: float) -> bytes:
+                return _telecharger_octets(url, limite, api_key)
+
+            transport = transport_authentifie
         self._lire = reessayer_http(
             tentatives=tentatives, pause_initiale=pause_initiale, dormir=dormir
-        )(lire_octets)
+        )(transport)
 
     def lire_json(self, chemin: str) -> object:
         """Télécharger un document JSON depuis une route relative au simulateur."""
