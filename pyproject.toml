@@ -25,3 +25,7 @@ strict = true
 
 [tool.ruff]
 line-length = 100
+
+[tool.ruff.lint.isort]
+# mobilis est toujours le paquet local, même si un module n'existe que sur une autre branche.
+known-first-party = ["mobilis"]
