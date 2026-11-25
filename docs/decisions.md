@@ -89,3 +89,10 @@ Résultats chiffrés : [resultats_us03.md](resultats_us03.md).
 - Station **exploitable** = en service **et** capacité connue (142 sur 150).
 
 Détail chiffré et tests associés : [resultats_us01.md](resultats_us01.md).
+
+## 2026-11-25 — Répartition effective des User Stories
+
+Répartition constatée sur le Team Board et appliquée dans BACKLOG.md et CONTRIBUTING.md :
+A (@abidiDev) — US-02 Trajets, US-04 État temps réel ; B (@plasticbagdancing) —
+US-01 Stations, US-03 Facturation, US-05 Livraison. Les tâches #9–#11 et #19–#21
+restent à réassigner sur GitHub en conséquence (à valider par A).

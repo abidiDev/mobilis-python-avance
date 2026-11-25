@@ -1,97 +1,110 @@
 # Mobilis — Python avancé
 
-Bibliothèque d'analyse d'un réseau de vélos en libre-service, réalisée en binôme.
-Le dépôt contient pour le moment le squelette officiel et les outils de collaboration.
-Les fonctionnalités métier et la commande `mobilis` restent à développer.
-
-## Ouvrir le projet sous Windows
-
-Dans Visual Studio Code : **Fichier > Ouvrir le dossier**, puis sélectionner :
-
-```text
-C:\Users\HP\Documents\projet pyton\mobilis
-```
-
-Ouvrir ensuite **Terminal > Nouveau terminal** (PowerShell).
-Python 3.11 est installé sur ce PC ; `python` seul pointe actuellement vers 3.8.
+Bibliothèque Python commune pour analyser le réseau fictif de vélos en libre-service
+Mobilis : référentiel des stations, fréquentation, facturation et état temps réel
+des bornes. Projet de binôme du cours *Python avancé*
+([sujet](https://dafniskra.github.io/portail_cours_M1/cours/PYTHON_AVANCE/projet.html)).
 
 ## Installation
 
-Lors du premier démarrage sur une machine, avec Python 3.11 installé :
+Python **3.11** ou plus récent. Depuis la racine du dépôt (PowerShell) :
 
 ```powershell
-cd 'C:\Users\HP\Documents\projet pyton\mobilis'
 py -3.11 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -e '.[dev]'
+.\.venv\Scripts\python.exe -m pip install -e ".[dev]"
 ```
 
-Si `.venv` existe déjà et fonctionne, ne pas le recréer.
-L'utilisation du chemin complet de l'environnement évite d'avoir à modifier
-la politique d'exécution PowerShell pour activer un script.
-Chaque membre installe son propre environnement ; `.venv` n'est pas partagé sur GitHub.
+Pour un simple usage, sans outils de développement : `pip install .`
+L'installation crée la commande `mobilis` (`.\.venv\Scripts\mobilis.exe`).
+Seule dépendance d'exécution : `tzdata` sous Windows (fuseau Europe/Paris).
 
-## Vérifier avant une Pull Request
+Vérification sur un environnement vierge (25/11/2026, Windows 11, Python 3.11.9) :
+nouveau venv, `pip install .`, puis `mobilis --version` et `mobilis facturation`
+donnent les mêmes résultats que l'environnement de développement.
+
+## Données
+
+Les fichiers du [kit officiel](https://dafniskra.github.io/portail_cours_M1/cours/PYTHON_AVANCE/projet_donnees/mobilis-kit.zip)
+ne sont **pas versionnés** et ne sont **jamais modifiés à la main**. Décompresser le kit
+à côté du dépôt, puis indiquer le dossier `donnees/` :
 
 ```powershell
-.\.venv\Scripts\python.exe -m ruff check .
-.\.venv\Scripts\python.exe -m ruff format --check .
-.\.venv\Scripts\python.exe -m mypy --strict src/mobilis
-.\.venv\Scripts\python.exe -m pytest -q
+$env:MOBILIS_DONNEES = "..\mobilis-kit\donnees"   # ou --donnees DOSSIER à chaque commande
 ```
 
-La CI exécute ces mêmes contrôles sous Python 3.11 lors des PR vers `main`
-et des envois sur `main`. Son contrôle s'appelle `lint-type-test`.
-Le test de démarrage vérifie uniquement que le paquet s'importe : il ne valide
-pas encore les fonctionnalités métier. La réussite locale ne remplace pas
-le premier résultat réel de GitHub Actions après publication.
+Chaque fichier peut aussi être donné explicitement : `--stations`, `--trajets`,
+`--abonnes`, `--tarifs`.
 
-## État de la préparation au 23 novembre 2026
+## Commandes
 
-- Kit local comparé au ZIP officiel : contenu identique.
-- Environnement `.venv` Python 3.11 créé et paquet installé.
-- Ruff, vérification du formatage et mypy strict : réussis.
-- Test officiel de démarrage : 1 test réussi.
-- Compatibilité des dépendances installées : vérifiée avec `pip check`.
-- Git initialisé sur `main` ; dépôt public : [abidiDev/mobilis-python-avance](https://github.com/abidiDev/mobilis-python-avance).
-- [Premier passage GitHub Actions réussi](https://github.com/abidiDev/mobilis-python-avance/actions/runs/45147536773) sur le commit `71ca3d7`.
-- [21 tickets créés](https://github.com/abidiDev/mobilis-python-avance/issues), avec critères, dépendances et répartition A/B.
-- Project, protection de `main` et invitation du binôme : à finaliser.
+| Commande | Question traitée | Durée indicative |
+|---|---|---:|
+| `mobilis stations` | Quelles stations sont réellement exploitables ? Quelles anomalies ? | < 1 s |
+| `mobilis frequentation` | Quelles stations se vident le matin et se remplissent le soir ? Profil horaire semaine / week-end ? | 4 s (63 s avec `--memoire`) |
+| `mobilis facturation` | Recettes mensuelles par formule et effet du changement tarifaire du 1er octobre 2026 | 22 s |
+| `mobilis etat` | État temps réel des bornes, stations vides / pleines, écarts avec le référentiel | 10 s |
 
-## Fichiers et données
+Options communes : `--json` (sortie complète en JSON), `--journal FICHIER.csv`
+(journal détaillé des anomalies, une ligne par anomalie).
+
+`mobilis etat` interroge le simulateur du kit, à lancer dans un second terminal :
+
+```powershell
+python ..\mobilis-kit\outils\serveur_bornes.py            # conditions réelles
+python ..\mobilis-kit\outils\serveur_bornes.py --calme    # pour comparer les stratégies
+mobilis etat --comparer-strategies
+```
+
+Codes de sortie : `0` succès, `1` données absentes ou invalides, `2` usage incorrect,
+`3` API des bornes injoignable.
+
+## Résultats sur le kit officiel
+
+| Cas | Résultat principal | Détail |
+|---|---|---|
+| Stations | 153 lignes → 150 stations, **142 exploitables** | [resultats_us01.md](docs/resultats_us01.md) |
+| Trajets | 155 631 lignes → **155 011 trajets** (620 doublons) ; MB-0142 se vide le plus le matin (−1 801) | [resultats_us02.md](docs/resultats_us02.md) |
+| Facturation | **249 166,70 €** sur le trimestre ; effet prix d'octobre **+16 076,65 € (+20,7 %)** | [resultats_us03.md](docs/resultats_us03.md) |
+| État temps réel | 149 bornes, 146 réponses en **10,1 s** (< 15 s), 8 requêtes simultanées au plus | [resultats_us04.md](docs/resultats_us04.md) |
+
+Chaque chiffre se reproduit avec la commande correspondante. Les décisions de
+nettoyage (anomalie, quantité, décision, justification, test) sont dans
+[docs/decisions.md](docs/decisions.md).
+
+## Architecture
+
+Monolithe modulaire en couches ([docs/architecture.md](docs/architecture.md)) :
 
 ```text
-projet pyton/
-├── mobilis-kit/                  kit officiel conservé à part
-│   ├── donnees/
-│   ├── outils/serveur_bornes.py
-│   ├── specification_facturation.md
-│   └── demarrage/
-└── mobilis/                      racine du dépôt à ouvrir
-    ├── src/mobilis/
-    ├── tests/
-    ├── docs/
-    ├── .github/
-    ├── pyproject.toml
-    └── README.md
+src/mobilis/
+├── cli.py         orchestration : arguments, assemblage, affichage
+├── domain/        modèles immuables, anomalies, ports de lecture (Protocol)
+├── adapters/      CSV, CSV.gz, JSONL, JSON, client HTTP des bornes
+└── services/      règles métier : stations, fréquentation, facturation, recettes, état
 ```
 
-Le dossier `src/mobilis` contient la bibliothèque ; `tests` contient ses tests.
-Ne pas modifier les exports bruts et ne pas les versionner. Chaque membre
-récupère le [kit officiel](https://dafniskra.github.io/portail_cours_M1/cours/PYTHON_AVANCE/projet_donnees/mobilis-kit.zip)
-à côté de son dépôt. Les chemins seront fournis par les options de la future CLI.
-Les règles R1–R12 et les exemples E1–E6 sont dans
-`../mobilis-kit/specification_facturation.md`.
+Les services reçoivent des objets du domaine, jamais des chemins de fichiers ;
+la CLI assemble adaptateurs et services.
+
+## Qualité
+
+| Contrôle | Commande | État |
+|---|---|---|
+| Lint | `python -m ruff check .` | vert |
+| Formatage | `python -m ruff format --check .` | vert |
+| Typage | `python -m mypy --strict src/mobilis` | vert (0 erreur) |
+| Tests | `python -m pytest -q` | **127 tests** (12 paramétrages, mocks HTTP et CLI) |
+
+La CI GitHub Actions (`lint-type-test`) exécute ces contrôles sous Python 3.11 à
+chaque PR vers `main`. Les tests n'utilisent ni le kit ni le serveur : ils écrivent
+de petits fichiers synthétiques et simulent l'API.
 
 ## Travailler en binôme
 
 - [Règles de branches, PR et revue](CONTRIBUTING.md)
-- [User Stories et tâches proposées](BACKLOG.md)
-- [Création du dépôt et configuration du Project](GITHUB_PROJECT_SETUP.md)
+- [User Stories et tâches](BACKLOG.md)
 - [Journal des décisions](docs/decisions.md)
 
-@abidiDev réalise Stations, API et Livraison ; le binôme réalise Trajets et Facturation. Chacun prend toutes les tâches de ses US, tests et documentation inclus. Accord initial commun sur les interfaces (#8), puis revue des PR par l’autre membre.
-Créer une branche courte à partir de `main`, ouvrir une PR liée à la tâche,
-attendre la CI verte et la revue, puis fusionner et supprimer la branche.
-Les [5 User Stories et 16 tâches](https://github.com/abidiDev/mobilis-python-avance/issues) sont créées et reliées. Le tableau Projects et la protection de `main` restent à configurer selon le guide.
-
-Sujet de référence : [Projet final Mobilis](https://dafniskra.github.io/portail_cours_M1/cours/PYTHON_AVANCE/projet.html).
+Répartition : @abidiDev — Trajets (US-02) et État temps réel (US-04) ;
+@plasticbagdancing — Stations (US-01), Facturation (US-03) et Livraison (US-05).
+Chaque PR est relue par l'autre membre avant fusion.
