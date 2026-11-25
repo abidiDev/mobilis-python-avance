@@ -2,8 +2,9 @@
 
 import asyncio
 from collections.abc import Callable, Iterable
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
+from datetime import datetime
 from time import perf_counter
 
 from mobilis.domain.models import Station
@@ -11,11 +12,22 @@ from mobilis.domain.models import Station
 
 @dataclass(frozen=True, slots=True)
 class EtatBorne:
-    """Réponse HTTP normalisée ; le mapping du simulateur reste à brancher."""
+    """État normalisé : total = vélos mécaniques + électriques."""
 
     code_station: str
     velos_disponibles: int
     places_libres: int
+    velos_mecaniques: int | None = None
+    velos_electriques: int | None = None
+    horodatage: datetime | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class ResultatCollecte:
+    """Réussites et erreurs individuelles d'une collecte réseau."""
+
+    etats: tuple[EtatBorne, ...]
+    erreurs: dict[str, str]
 
 
 @dataclass(frozen=True, slots=True)
@@ -98,6 +110,42 @@ def mesurer_strategies(
     mesures["asyncio_to_thread"] = perf_counter() - debut
     return mesures
 
+
+
+
+def collecter_threads_avec_erreurs(
+    codes: Iterable[str],
+    charger: Callable[[str], EtatBorne],
+    *,
+    max_simultanes: int = 8,
+) -> ResultatCollecte:
+    """Interroger toutes les bornes sans perdre les réussites si l'une échoue.
+
+    Une erreur HTTP, un délai dépassé ou un JSON malformé est rattaché au code
+    concerné ; la collecte continue. L'ordre des succès suit celui des codes
+    demandés. Avec max_simultanes=8, aucune requête supplémentaire n'est
+    démarrée avant qu'un des huit travailleurs soit disponible.
+    """
+    if not 1 <= max_simultanes <= 8:
+        raise ValueError("La limite de concurrence doit être comprise entre 1 et 8")
+    liste = list(codes)
+    etats_par_position: dict[int, EtatBorne] = {}
+    erreurs: dict[str, str] = {}
+    with ThreadPoolExecutor(max_workers=max_simultanes) as pool:
+        travaux = {
+            pool.submit(charger, code): (position, code)
+            for position, code in enumerate(liste)
+        }
+        for travail in as_completed(travaux):
+            position, code = travaux[travail]
+            try:
+                etats_par_position[position] = travail.result()
+            except (OSError, TimeoutError, ValueError) as exc:
+                erreurs[code] = f"{type(exc).__name__}: {exc}"
+    return ResultatCollecte(
+        etats=tuple(etats_par_position[pos] for pos in sorted(etats_par_position)),
+        erreurs=erreurs,
+    )
 
 def comparer_etats(stations: Iterable[Station], etats: Iterable[EtatBorne]) -> RapportEtat:
     """Comparer les compteurs du serveur aux capacités du référentiel.
