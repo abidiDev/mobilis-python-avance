@@ -28,6 +28,8 @@ def _montant(valeur: Any, champ: str) -> Decimal:
         montant = Decimal(str(valeur))
     except InvalidOperation as exc:
         raise TarifsInvalides(f"{champ} : montant illisible ({valeur!r})") from exc
+    if not montant.is_finite():
+        raise TarifsInvalides(f"{champ} : montant non fini ({valeur!r})")
     if montant < 0:
         raise TarifsInvalides(f"{champ} : montant négatif ({valeur!r})")
     return montant
@@ -66,7 +68,10 @@ class LecteurTarifsJson:
         self.chemin = chemin
 
     def lire(self, signaler: SignalerAnomalie) -> ConfigurationTarifaire:
-        brut = json.loads(self.chemin.read_text(encoding="utf-8"))
+        try:
+            brut = json.loads(self.chemin.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            raise TarifsInvalides(f"tarifs.json : JSON invalide ({exc})") from exc
         try:
             grilles = tuple(
                 sorted(
@@ -93,7 +98,7 @@ class LecteurTarifsJson:
                 seuil_non_restitution_heures=int(brut["seuil_non_restitution_heures"]),
                 grilles=grilles,
             )
-        except (KeyError, ValueError) as exc:
+        except (KeyError, ValueError, TypeError, AttributeError) as exc:
             if isinstance(exc, TarifsInvalides):
                 raise
             raise TarifsInvalides(f"tarifs.json mal formé : {exc}") from exc
