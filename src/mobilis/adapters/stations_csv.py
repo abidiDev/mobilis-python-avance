@@ -103,7 +103,8 @@ def lire_capacite(brut: str, signal: Signal) -> int | None:
 
 def _decimal(brut: str) -> Decimal | None:
     try:
-        return Decimal(brut.strip().replace(",", "."))
+        valeur = Decimal(brut.strip().replace(",", "."))
+        return valeur if valeur.is_finite() else None
     except InvalidOperation:
         return None
 

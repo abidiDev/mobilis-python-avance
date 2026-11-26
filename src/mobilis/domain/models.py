@@ -68,9 +68,13 @@ class Station:
             raise ValueError(f"capacité non positive : {self.capacite}")
         if (self.latitude is None) != (self.longitude is None):
             raise ValueError("latitude et longitude doivent être connues ensemble")
-        if self.latitude is not None and not -90 <= self.latitude <= 90:
+        if self.latitude is not None and (
+            not self.latitude.is_finite() or not -90 <= self.latitude <= 90
+        ):
             raise ValueError(f"latitude hors limites : {self.latitude}")
-        if self.longitude is not None and not -180 <= self.longitude <= 180:
+        if self.longitude is not None and (
+            not self.longitude.is_finite() or not -180 <= self.longitude <= 180
+        ):
             raise ValueError(f"longitude hors limites : {self.longitude}")
         if not isinstance(self.statut, StatutStation):
             raise TypeError(f"statut inattendu : {self.statut!r}")
