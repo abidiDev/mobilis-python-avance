@@ -42,7 +42,13 @@ class FormuleAbonnement(StrEnum):
 
 @dataclass(frozen=True, slots=True)
 class Station:
-    """Station de référence, sans imposer de résolution des codes répétés."""
+    """Station de référence, immuable et validée à la construction.
+
+    Les invariants vérifiés ici valent pour toute station, quelle que soit sa
+    source. Le format des codes de l'export (`MB-0001`) et les corrections
+    de données brutes relèvent du lecteur CSV ; la résolution des codes
+    répétés relève du service `stations`.
+    """
 
     code: str
     nom: str
@@ -52,6 +58,30 @@ class Station:
     longitude: Decimal | None
     statut: StatutStation
     mise_en_service: date
+
+    def __post_init__(self) -> None:
+        for champ in ("code", "nom", "commune"):
+            valeur = getattr(self, champ)
+            if not valeur or valeur != valeur.strip():
+                raise ValueError(f"{champ} vide ou entouré d'espaces : {valeur!r}")
+        if self.capacite is not None and self.capacite <= 0:
+            raise ValueError(f"capacité non positive : {self.capacite}")
+        if (self.latitude is None) != (self.longitude is None):
+            raise ValueError("latitude et longitude doivent être connues ensemble")
+        if self.latitude is not None and (
+            not self.latitude.is_finite() or not -90 <= self.latitude <= 90
+        ):
+            raise ValueError(f"latitude hors limites : {self.latitude}")
+        if self.longitude is not None and (
+            not self.longitude.is_finite() or not -180 <= self.longitude <= 180
+        ):
+            raise ValueError(f"longitude hors limites : {self.longitude}")
+        if not isinstance(self.statut, StatutStation):
+            raise TypeError(f"statut inattendu : {self.statut!r}")
+
+    @property
+    def en_service(self) -> bool:
+        return self.statut is StatutStation.EN_SERVICE
 
 
 @dataclass(frozen=True, slots=True)
