@@ -4,25 +4,12 @@ import asyncio
 from collections.abc import Callable, Iterable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
-from datetime import datetime
 from time import perf_counter
 from typing import TypeVar
 
-from mobilis.domain.models import Station
+from mobilis.domain.models import EtatBorne, Station
 
 T = TypeVar("T")
-
-
-@dataclass(frozen=True, slots=True)
-class EtatBorne:
-    """État normalisé : total = vélos mécaniques + électriques."""
-
-    code_station: str
-    velos_disponibles: int
-    places_libres: int
-    velos_mecaniques: int | None = None
-    velos_electriques: int | None = None
-    horodatage: datetime | None = None
 
 
 @dataclass(frozen=True, slots=True)

@@ -12,7 +12,8 @@ dependencies = ['tzdata>=2025.2; sys_platform == "win32"']
 [project.optional-dependencies]
 dev = ["pytest>=8", "mypy>=1.10", "ruff>=0.5"]
 
-# À compléter : la commande installée (section [project.scripts])
+[project.scripts]
+mobilis = "mobilis.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

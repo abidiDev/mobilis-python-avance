@@ -4,8 +4,8 @@
 
 | Responsable | User Stories | Tâches |
 |---|---|---|
-| A — @abidiDev | Stations #1, API / État temps réel #4, Livraison #5 | #6, #7, #9, #10, #11, #17, #18, #19, #20, #21 |
-| B — binôme, compte à ajouter | Trajets #2, Facturation #3 | #12, #13, #14, #15, #16 |
+| A — @abidiDev | Trajets #2, API / État temps réel #4 | #6, #7, #8, #12, #13, #17, #18 |
+| B — @plasticbagdancing | Stations #1, Facturation #3, Livraison #5 | #9, #10, #11, #14, #15, #16, #19, #20, #21 |
 
 Chacun réalise toutes les tâches de ses US : code, tests et documentation. L’autre membre relit les PR. La tâche préalable #8 est un accord commun sur les interfaces, consigné par A. A coordonne la livraison ; chacun rédige son bilan individuel et participe à la démonstration. Les tickets B attendent le compte du binôme pour leur assignation GitHub.
 
