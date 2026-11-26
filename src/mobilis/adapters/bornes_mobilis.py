@@ -14,7 +14,7 @@ from typing import cast
 from urllib.parse import quote
 
 from mobilis.adapters.bornes_http import ClientBornesHTTP, _telecharger_octets
-from mobilis.services.etat_reseau import EtatBorne
+from mobilis.domain.models import EtatBorne
 
 
 def _objet_json(valeur: object) -> dict[str, object]:

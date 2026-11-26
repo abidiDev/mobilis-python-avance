@@ -141,3 +141,19 @@ class ConfigurationTarifaire:
     penalite_non_restitution: Decimal
     seuil_non_restitution_heures: int
     grilles: tuple[GrilleTarifaire, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class EtatBorne:
+    """État d'une station normalisé depuis le simulateur HTTP.
+
+    Ce modèle appartient au domaine commun, afin que les adaptateurs HTTP
+    n'aient pas besoin d'importer la couche métier `services`.
+    """
+
+    code_station: str
+    velos_disponibles: int
+    places_libres: int
+    velos_mecaniques: int | None = None
+    velos_electriques: int | None = None
+    horodatage: datetime | None = None
