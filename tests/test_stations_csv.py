@@ -140,3 +140,19 @@ def test_version_ancienne_lue_apres_la_recente(fichier: Path) -> None:
     inverse = [*stations[:-2], stations[-1], stations[-2]]
     rapport = construire_referentiel(inverse, lambda _: None)
     assert next(s for s in rapport.referentiel if s.code == "MB-0006").capacite == 40
+
+
+@pytest.mark.parametrize(
+    ("latitude", "longitude"),
+    [("NaN", "4,83"), ("45,75", "Infinity"), ("-Infinity", "4,83")],
+)
+def test_coordonnees_non_finies_traitees_comme_inconnues(
+    tmp_path: Path, latitude: str, longitude: str
+) -> None:
+    chemin = tmp_path / "stations.csv"
+    ligne = f"MB-0001;Test;Valmont;12;{latitude};{longitude};en_service;16/12/2017"
+    chemin.write_bytes((";".join(COLONNES) + "\n" + ligne + "\n").encode(ENCODAGE))
+    journal = CollecteurAnomalies()
+    station = next(LecteurStationsCsv(chemin).lire(journal.signaler))
+    assert station.latitude is None and station.longitude is None
+    assert [x.code_anomalie for x in journal.elements] == ["COORDONNEES_INVALIDES"]

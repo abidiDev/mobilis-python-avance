@@ -214,3 +214,39 @@ def test_transport_avec_mock_explicitement_verifie() -> None:
     resultat = client.lire_json("stations/MB-0001")
     assert resultat == {"code": "MB-0001", "libres": 3}
     transport.assert_called_once_with("http://localhost:8080/stations/MB-0001", 5.0)
+
+
+def test_retry_after_trop_long_interrompt_sans_dormir() -> None:
+    """Respecter Retry-After sans bloquer un worker pendant une heure."""
+    attentes: list[float] = []
+    appels = 0
+
+    def appel() -> bytes:
+        nonlocal appels
+        appels += 1
+        raise _erreur_http(503, "3600")
+
+    with pytest.raises(HTTPError) as erreur:
+        reessayer_http(dormir=attentes.append, attente_max=5.0)(appel)()
+    assert erreur.value.code == 503
+    assert appels == 1
+    assert attentes == []
+
+
+def test_comparaison_strategies_continue_sur_borne_indisponible() -> None:
+    """Un 504 n'empêche ni les 3 chronos ni les autres codes d'être tentés."""
+    appels: list[str] = []
+
+    def charger(code: str) -> EtatBorne:
+        appels.append(code)
+        if code == "MB-0079":
+            raise _erreur_http(504)
+        return EtatBorne(code, 1, 3)
+
+    codes = ["MB-0001", "MB-0079", "MB-0002"]
+    mesures = mesurer_strategies(codes, charger, max_simultanes=2)
+
+    assert set(mesures) == {"sequentiel", "threads", "asyncio_to_thread"}
+    assert all(valeur >= 0 for valeur in mesures.values())
+    assert len(appels) == 3 * len(codes)
+    assert appels.count("MB-0079") == 3

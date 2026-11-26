@@ -108,6 +108,8 @@ def test_tarifs_en_decimal_et_grilles_triees(tmp_path: Path) -> None:
         {"prix_tranche": 1.2},
         {"prix_tranche": "abc"},
         {"prix_tranche": "-1"},
+        {"prix_tranche": "NaN"},
+        {"prix_tranche": "Infinity"},
         {"tranche_minutes": 0},
     ],
 )
@@ -159,3 +161,11 @@ def test_deux_strategies_respectent_le_contrat() -> None:
 def test_tarification_abstraite_non_instanciable() -> None:
     with pytest.raises(TypeError):
         Tarification(ANNUEL)  # type: ignore[abstract]
+
+
+@pytest.mark.parametrize("contenu", ["{", "null", '{"grilles": []}'])
+def test_configuration_malformee_renvoie_erreur_metier(tmp_path: Path, contenu: str) -> None:
+    chemin = tmp_path / "tarifs.json"
+    chemin.write_text(contenu, encoding="utf-8")
+    with pytest.raises(TarifsInvalides):
+        LecteurTarifsJson(chemin).lire(lambda _: None)
