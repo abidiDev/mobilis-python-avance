@@ -30,8 +30,8 @@ from mobilis.adapters.stations_csv import LecteurStationsCsv
 from mobilis.adapters.tarifs_json import LecteurTarifsJson, TarifsInvalides
 from mobilis.adapters.trajets_csv import LecteurTrajetsGzip
 from mobilis.domain.anomalies import Anomalie, CollecteurAnomalies
+from mobilis.domain.models import EtatBorne
 from mobilis.services.etat_reseau import (
-    EtatBorne,
     collecter_threads_avec_erreurs,
     comparer_etats,
     mesurer_strategies,
