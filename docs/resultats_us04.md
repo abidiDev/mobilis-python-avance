@@ -205,3 +205,24 @@ sont documentés. Les dépendances transverses restantes sont
 le rapprochement avec le référentiel validé (US-01),
 la commande installée `mobilis etat` (US-05)
 et la revue de code du binôme avant fusion.
+
+## Corrections de revue croisée — 26/11/2026
+
+La relecture de Chanez sur la PR #27 a identifié deux blocages,
+maintenant corrigés dans le code et dans des tests de non-régression :
+
+1. Le chronométrage `--comparer-strategies` ne s'interrompt plus sur
+   un **504** ou une autre erreur de borne. Chaque méthode tente tous les
+   codes et ignore les erreurs **uniquement pour la mesure du temps** ;
+   aucun faux état de borne n'est ajouté au bilan métier. Sous serveur
+   normal, les aléas d'une passe à l'autre limitent la comparabilité ;
+   le **mode `--calme`** reste le protocole de référence.
+2. Le délai `Retry-After` est borné par un **budget d'attente de 5 s**.
+   Si le serveur demande une attente plus longue, le client **abandonne
+   la tentative et propage l'erreur HTTP**, plutôt que d'attendre une
+   heure ou de réessayer avant le délai demandé par le serveur.
+   La collecte résiliente conserve toujours les réussites des autres bornes.
+
+Ces correctifs ont deux nouveaux tests : panne 504 pendant les trois
+comparaisons et `Retry-After: 3600` sans appel à `sleep`.
+Le statut exact des vérifications figure dans la CI de la PR.
