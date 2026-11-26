@@ -7,7 +7,7 @@ name = "mobilis"
 version = "0.1.0"
 description = "Bibliothèque de traitement des données Mobilis"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = ['tzdata>=2025.2; sys_platform == "win32"']
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "mypy>=1.10", "ruff>=0.5"]
@@ -25,3 +25,7 @@ strict = true
 
 [tool.ruff]
 line-length = 100
+
+[tool.ruff.lint.isort]
+# mobilis est toujours le paquet local, même si un module n'existe que sur une autre branche.
+known-first-party = ["mobilis"]

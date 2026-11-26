@@ -35,6 +35,52 @@ Voir [contrats_t03.md](contrats_t03.md) pour les définitions précises
 et les tâches de validation du binôme. **PR de centralisation proposée,
 validation du binôme attendue.**
 
+## 2026-11-25 — US-02 Trajets : décisions de nettoyage (proposées par B, à valider par A)
+
+Constats mesurés sur `trajets_2026-08_2026-10.csv.gz` (155 631 lignes) :
+
+| Anomalie | Lignes | Décision | Justification | Test |
+|---|---:|---|---|---|
+| Trois formats de date (ISO avec décalage, UTC `Z`, `JJ/MM/AAAA HH:MM:SS`) | 4 988 débuts et 5 305 fins au format français | Convertir en instant UTC ; format français interprété en `Europe/Paris` | Durées médianes du même ordre (20–37 min) quelle que soit la combinaison de formats : pas de décalage systématique observé | `test_trois_formats_de_dates` |
+| Heure locale ambiguë (nuit du 25/10) | 0 | Première occurrence (`fold=0`), alerte | Aucun cas réel ; règle gardée pour un futur export | `test_heure_ambigue_signalee` |
+| Heure locale inexistante (nuit du 29/03) | 0 | Ligne écartée | Instant impossible | `test_heure_inexistante_rejetee` |
+| Même `trajet_id` répété | 620 (toutes des copies identiques) | Garder la 1re ligne valide, signaler `DOUBLON_IDENTIQUE` ; contenu différent → `ID_EN_CONFLIT` (0 cas) | Renvois de bornes (énoncé) ; R11 : facturé une seule fois | `test_dedoublonner_garde_la_premiere_occurrence` |
+| Doublon écrit dans un autre format de date | 0 observé | Comparaison sur le trajet **normalisé** (empreinte BLAKE2b 16 octets) | Même instant = même trajet ; index plus compact qu'une ligne JSON | `test_renvoi_dans_un_autre_format_est_un_doublon_identique` |
+| Fin antérieure au début | 145 signalements = 143 trajets uniques + 2 sur des lignes doublons (−1 à −59 min, toujours avec au moins une date ISO à décalage) | Conserver et signaler `DUREE_NEGATIVE` ; compté dans les départs/arrivées ; **non facturé** (R10) | La station et l'heure de départ restent plausibles ; cause non établie | `test_trajet_horodatage_incoherent_non_facture` (US-03) |
+| Fin et station d'arrivée absentes | 78 | Conserver, compter `sans_retour`, exclure des arrivées ; pénalité R9 en facturation | Vélo non restitué : pas d'arrivée à inventer | `test_frequentation_weekend_et_retour_absent` |
+
+Conventions d'analyse : matin = `[07h, 10h[`, soir = `[17h, 20h[`, heure civile `Europe/Paris`,
+week-end = samedi et dimanche de la date locale.
+
+## 2026-11-25 — US-03 Facturation : décisions d'interprétation (proposées par B, à valider par A)
+
+La spécification `specification_facturation.md` est appliquée telle quelle ;
+les points qu'elle ne tranche pas sont décidés ici et couverts par un test.
+
+| Question | Décision | Test |
+|---|---|---|
+| Ordre des règles | R9 (pas de retour) → R10 (fin < début) → R9 (> 24 h) → R8 (fantôme) → R4–R7 | `test_r9_*`, `test_trajet_horodatage_incoherent_non_facture`, `test_r8_*` |
+| « Plus de 24 h » | Strictement supérieur au seuil | `test_r9_penalite_hors_plafond[plus_de_24h]` |
+| « Moins de 2 minutes » | Strictement inférieur | `test_r8_trajet_fantome_non_facture` |
+| Formule d'un trajet pénalisé | Celle de R2/R3 ; la pénalité n'entre jamais dans le plafond | `test_r9_penalite_hors_plafond` |
+| Plafond R6 | Par (abonné, jour local de début, formule) ; seules les formules d'abonnement | `test_exemples_valides_par_la_direction[E5]`, `test_r6_*` |
+| Périodes qui se chevauchent | La plus récemment commencée l'emporte (0 cas dans le kit) | — |
+| Abonnement inactif | Tarif occasionnel, compté mais non signalé (R3 ne signale que les introuvables) | `test_r2_abonnement_expire_donne_tarif_occasionnel` |
+| Formule mal écrite (`" ANNUEL"`) | Corrigée et signalée en `info` | `test_abonnes_lignes_abimees_signalees_et_historique_conserve` |
+| Tarifs invalides | Exception `TarifsInvalides` : on ne facture pas avec une grille partielle | `test_tarifs_invalides_refuses` |
+| Mois des recettes | Mois de la date locale de début du trajet | `test_recettes_par_mois_et_formule` |
+| Effet du 1er octobre | Mêmes trajets refacturés avec l'ancienne grille sur toute la période | `test_effet_prix_isole_le_changement_de_grille` |
+
+Contrat de tarification : classe abstraite `Tarification` (patron Stratégie) et deux
+implémentations, `TarificationAbonnement` (plafond R6) et `TarificationOccasionnelle`.
+Une ABC plutôt qu'un `Protocol` : le calcul R4/R5/R7 est commun et vit dans la classe
+de base ; seules les règles de plafond diffèrent.
+
+Mémoire : le moteur traite un trajet à la fois. Le cumul du plafond est indexé par
+abonné-jour (au plus ~5 200 abonnés × 92 jours), donc borné quel que soit le nombre de trajets.
+
+Résultats chiffrés : [resultats_us03.md](resultats_us03.md).
+
 ## 2026-11-25 — US-01 Stations : décisions de nettoyage (proposées par B, à valider par A)
 
 - `stations.csv` est lu en CP1252, séparateur `;`, décimales à virgule.
