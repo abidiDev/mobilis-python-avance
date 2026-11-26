@@ -93,7 +93,7 @@ la CLI assemble adaptateurs et services.
 | Lint | `python -m ruff check .` | vert |
 | Formatage | `python -m ruff format --check .` | vert |
 | Typage | `python -m mypy --strict src/mobilis` | vert (0 erreur) |
-| Tests | `python -m pytest -q` | **127 tests** (12 paramétrages, mocks HTTP et CLI) |
+| Tests | `python -m pytest -q` | **139 tests** (jeux synthétiques, mocks HTTP et CLI), vérifiés sur la branche d'intégration |
 
 La CI GitHub Actions (`lint-type-test`) exécute ces contrôles sous Python 3.11 à
 chaque PR vers `main`. Les tests n'utilisent ni le kit ni le serveur : ils écrivent
@@ -104,6 +104,8 @@ de petits fichiers synthétiques et simulent l'API.
 - [Règles de branches, PR et revue](CONTRIBUTING.md)
 - [User Stories et tâches](BACKLOG.md)
 - [Journal des décisions](docs/decisions.md)
+- [Bilan individuel de Wael (US-02 et US-04)](docs/bilan_individuel_wael.md)
+- [Fiche de soutenance — partie Wael](docs/soutenance_wael.md)
 
 Répartition : @abidiDev — Trajets (US-02) et État temps réel (US-04) ;
 @plasticbagdancing — Stations (US-01), Facturation (US-03) et Livraison (US-05).

@@ -4,7 +4,6 @@ import asyncio
 from collections.abc import Callable, Iterable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
-from datetime import datetime
 from time import perf_counter
 from typing import TypeVar
 
