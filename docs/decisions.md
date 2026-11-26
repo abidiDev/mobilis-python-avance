@@ -35,6 +35,23 @@ Voir [contrats_t03.md](contrats_t03.md) pour les définitions précises
 et les tâches de validation du binôme. **PR de centralisation proposée,
 validation du binôme attendue.**
 
+## 2026-11-25 — US-02 Trajets : décisions de nettoyage (proposées par B, à valider par A)
+
+Constats mesurés sur `trajets_2026-08_2026-10.csv.gz` (155 631 lignes) :
+
+| Anomalie | Lignes | Décision | Justification | Test |
+|---|---:|---|---|---|
+| Trois formats de date (ISO avec décalage, UTC `Z`, `JJ/MM/AAAA HH:MM:SS`) | 4 988 débuts et 5 305 fins au format français | Convertir en instant UTC ; format français interprété en `Europe/Paris` | Durées médianes du même ordre (20–37 min) quelle que soit la combinaison de formats : pas de décalage systématique observé | `test_trois_formats_de_dates` |
+| Heure locale ambiguë (nuit du 25/10) | 0 | Première occurrence (`fold=0`), alerte | Aucun cas réel ; règle gardée pour un futur export | `test_heure_ambigue_signalee` |
+| Heure locale inexistante (nuit du 29/03) | 0 | Ligne écartée | Instant impossible | `test_heure_inexistante_rejetee` |
+| Même `trajet_id` répété | 620 (toutes des copies identiques) | Garder la 1re ligne valide, signaler `DOUBLON_IDENTIQUE` ; contenu différent → `ID_EN_CONFLIT` (0 cas) | Renvois de bornes (énoncé) ; R11 : facturé une seule fois | `test_dedoublonner_garde_la_premiere_occurrence` |
+| Doublon écrit dans un autre format de date | 0 observé | Comparaison sur le trajet **normalisé** (empreinte BLAKE2b 16 octets) | Même instant = même trajet ; index plus compact qu'une ligne JSON | `test_renvoi_dans_un_autre_format_est_un_doublon_identique` |
+| Fin antérieure au début | 145 signalements = 143 trajets uniques + 2 sur des lignes doublons (−1 à −59 min, toujours avec au moins une date ISO à décalage) | Conserver et signaler `DUREE_NEGATIVE` ; compté dans les départs/arrivées ; **non facturé** (R10) | La station et l'heure de départ restent plausibles ; cause non établie | `test_trajet_horodatage_incoherent_non_facture` (US-03) |
+| Fin et station d'arrivée absentes | 78 | Conserver, compter `sans_retour`, exclure des arrivées ; pénalité R9 en facturation | Vélo non restitué : pas d'arrivée à inventer | `test_frequentation_weekend_et_retour_absent` |
+
+Conventions d'analyse : matin = `[07h, 10h[`, soir = `[17h, 20h[`, heure civile `Europe/Paris`,
+week-end = samedi et dimanche de la date locale.
+
 ## 2026-11-25 — US-03 Facturation : décisions d'interprétation (proposées par B, à valider par A)
 
 La spécification `specification_facturation.md` est appliquée telle quelle ;
