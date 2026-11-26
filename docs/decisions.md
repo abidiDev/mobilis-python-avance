@@ -51,3 +51,32 @@ Constats mesurés sur `trajets_2026-08_2026-10.csv.gz` (155 631 lignes) :
 
 Conventions d'analyse : matin = `[07h, 10h[`, soir = `[17h, 20h[`, heure civile `Europe/Paris`,
 week-end = samedi et dimanche de la date locale.
+
+## 2026-11-25 — US-03 Facturation : décisions d'interprétation (proposées par B, à valider par A)
+
+La spécification `specification_facturation.md` est appliquée telle quelle ;
+les points qu'elle ne tranche pas sont décidés ici et couverts par un test.
+
+| Question | Décision | Test |
+|---|---|---|
+| Ordre des règles | R9 (pas de retour) → R10 (fin < début) → R9 (> 24 h) → R8 (fantôme) → R4–R7 | `test_r9_*`, `test_trajet_horodatage_incoherent_non_facture`, `test_r8_*` |
+| « Plus de 24 h » | Strictement supérieur au seuil | `test_r9_penalite_hors_plafond[plus_de_24h]` |
+| « Moins de 2 minutes » | Strictement inférieur | `test_r8_trajet_fantome_non_facture` |
+| Formule d'un trajet pénalisé | Celle de R2/R3 ; la pénalité n'entre jamais dans le plafond | `test_r9_penalite_hors_plafond` |
+| Plafond R6 | Par (abonné, jour local de début, formule) ; seules les formules d'abonnement | `test_exemples_valides_par_la_direction[E5]`, `test_r6_*` |
+| Périodes qui se chevauchent | La plus récemment commencée l'emporte (0 cas dans le kit) | — |
+| Abonnement inactif | Tarif occasionnel, compté mais non signalé (R3 ne signale que les introuvables) | `test_r2_abonnement_expire_donne_tarif_occasionnel` |
+| Formule mal écrite (`" ANNUEL"`) | Corrigée et signalée en `info` | `test_abonnes_lignes_abimees_signalees_et_historique_conserve` |
+| Tarifs invalides | Exception `TarifsInvalides` : on ne facture pas avec une grille partielle | `test_tarifs_invalides_refuses` |
+| Mois des recettes | Mois de la date locale de début du trajet | `test_recettes_par_mois_et_formule` |
+| Effet du 1er octobre | Mêmes trajets refacturés avec l'ancienne grille sur toute la période | `test_effet_prix_isole_le_changement_de_grille` |
+
+Contrat de tarification : classe abstraite `Tarification` (patron Stratégie) et deux
+implémentations, `TarificationAbonnement` (plafond R6) et `TarificationOccasionnelle`.
+Une ABC plutôt qu'un `Protocol` : le calcul R4/R5/R7 est commun et vit dans la classe
+de base ; seules les règles de plafond diffèrent.
+
+Mémoire : le moteur traite un trajet à la fois. Le cumul du plafond est indexé par
+abonné-jour (au plus ~5 200 abonnés × 92 jours), donc borné quel que soit le nombre de trajets.
+
+Résultats chiffrés : [resultats_us03.md](resultats_us03.md).
