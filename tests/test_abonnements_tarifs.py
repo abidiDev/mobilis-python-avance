@@ -163,7 +163,7 @@ def test_tarification_abstraite_non_instanciable() -> None:
         Tarification(ANNUEL)  # type: ignore[abstract]
 
 
-@pytest.mark.parametrize("contenu", ['{', 'null', '{"grilles": []}'])
+@pytest.mark.parametrize("contenu", ["{", "null", '{"grilles": []}'])
 def test_configuration_malformee_renvoie_erreur_metier(tmp_path: Path, contenu: str) -> None:
     chemin = tmp_path / "tarifs.json"
     chemin.write_text(contenu, encoding="utf-8")
