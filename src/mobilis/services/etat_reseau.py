@@ -6,8 +6,11 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from datetime import datetime
 from time import perf_counter
+from typing import TypeVar
 
 from mobilis.domain.models import Station
+
+T = TypeVar("T")
 
 
 @dataclass(frozen=True, slots=True)
@@ -41,19 +44,17 @@ class RapportEtat:
     stations_sans_reponse: tuple[str, ...]
 
 
-def collecter_sequentiel(
-    codes: Iterable[str], charger: Callable[[str], EtatBorne]
-) -> list[EtatBorne]:
+def collecter_sequentiel(codes: Iterable[str], charger: Callable[[str], T]) -> list[T]:
     """Interroger les stations les unes après les autres."""
     return [charger(code) for code in codes]
 
 
 def collecter_threads(
     codes: Iterable[str],
-    charger: Callable[[str], EtatBorne],
+    charger: Callable[[str], T],
     *,
     max_simultanes: int = 8,
-) -> list[EtatBorne]:
+) -> list[T]:
     """Collecter les stations avec au plus 8 threads E/S."""
     if not 1 <= max_simultanes <= 8:
         raise ValueError("La limite de concurrence doit être comprise entre 1 et 8")
@@ -63,10 +64,10 @@ def collecter_threads(
 
 async def collecter_async(
     codes: Iterable[str],
-    charger: Callable[[str], EtatBorne],
+    charger: Callable[[str], T],
     *,
     max_simultanes: int = 8,
-) -> list[EtatBorne]:
+) -> list[T]:
     """Comparer une orchestration asyncio de travail HTTP synchrone.
 
     asyncio.to_thread utilise aussi des threads ; cette approche est un pont
@@ -77,7 +78,7 @@ async def collecter_async(
         raise ValueError("La limite de concurrence doit être comprise entre 1 et 8")
     semaphore = asyncio.Semaphore(max_simultanes)
 
-    async def charger_une(code: str) -> EtatBorne:
+    async def charger_une(code: str) -> T:
         async with semaphore:
             return await asyncio.to_thread(charger, code)
 
@@ -92,21 +93,32 @@ def mesurer_strategies(
 ) -> dict[str, float]:
     """Mesurer les durées des 3 stratégies sur le même ensemble de codes.
 
-    Appel à réserver aux données de test ou à un serveur dont les réponses
-    et la charge sont comparables entre les répétitions.
+    Les erreurs individuelles de borne (504, connexion, JSON invalide) sont
+    ignorées uniquement pour chronométrer *tous* les codes sans interrompre
+    le benchmark. Elles ne sont pas converties en faux états métier et
+    les résultats de mesure ne sont jamais utilisés dans comparer_etats.
+    Répéter les mesures pour comparer les performances sérieusement.
     """
     liste = list(codes)
     mesures: dict[str, float] = {}
+
+    def appeler_pour_mesure(code: str) -> None:
+        try:
+            charger(code)
+        except (OSError, ValueError, TypeError):
+            # Le benchmark mesure le coût des échecs, sans inventer de réponse.
+            pass
+
     debut = perf_counter()
-    collecter_sequentiel(liste, charger)
+    collecter_sequentiel(liste, appeler_pour_mesure)
     mesures["sequentiel"] = perf_counter() - debut
 
     debut = perf_counter()
-    collecter_threads(liste, charger, max_simultanes=max_simultanes)
+    collecter_threads(liste, appeler_pour_mesure, max_simultanes=max_simultanes)
     mesures["threads"] = perf_counter() - debut
 
     debut = perf_counter()
-    asyncio.run(collecter_async(liste, charger, max_simultanes=max_simultanes))
+    asyncio.run(collecter_async(liste, appeler_pour_mesure, max_simultanes=max_simultanes))
     mesures["asyncio_to_thread"] = perf_counter() - debut
     return mesures
 

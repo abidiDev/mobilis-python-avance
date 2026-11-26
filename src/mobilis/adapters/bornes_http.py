@@ -41,15 +41,17 @@ def reessayer_http(
     *,
     tentatives: int = 3,
     pause_initiale: float = 0.1,
+    attente_max: float = 5.0,
     dormir: Callable[[float], None] = time.sleep,
 ) -> Callable[[Callable[P, R]], Callable[P, R]]:
     """Décorateur réutilisable : réessayer uniquement 429, 503 et 504.
 
     Retry-After a priorité s'il demande une attente plus longue que le backoff.
-    On ne réessaie jamais indéfiniment ni pour des erreurs permanentes.
+    Si l'attente demandée dépasse le budget, l'erreur HTTP est propagée sans
+    dormir ni ignorer la consigne du serveur (ne pas réessayer trop tôt).
     """
-    if tentatives < 1 or pause_initiale < 0:
-        raise ValueError("tentatives >= 1 et pause_initiale >= 0 requis")
+    if tentatives < 1 or pause_initiale < 0 or attente_max <= 0:
+        raise ValueError("tentatives >= 1, pause_initiale >= 0 et attente_max > 0 requis")
 
     def decorer(fonction: Callable[P, R]) -> Callable[P, R]:
         @wraps(fonction)
@@ -61,7 +63,10 @@ def reessayer_http(
                     if exc.code not in _CODES_REESSAI or numero == tentatives - 1:
                         raise
                     delai = _delai_retry_after(exc.headers.get("Retry-After"))
-                    dormir(max(pause_initiale * (2**numero), delai or 0.0))
+                    attente = max(pause_initiale * (2**numero), delai or 0.0)
+                    if attente > attente_max:
+                        raise  # Ne pas violer Retry-After en raccourcissant l'attente.
+                    dormir(attente)
             raise AssertionError("boucle de réessai non terminée")
 
         return enveloppe
